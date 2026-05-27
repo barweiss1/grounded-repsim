@@ -7,6 +7,9 @@ import logging
 
 from scoring import *
 from compute_embeddings import compute_embeddings
+from metrics import AlignmentMetrics
+import json
+import pathlib
 
 sys.path.append(os.path.abspath(".."))
 from paths import resources_path
@@ -15,6 +18,34 @@ from paths import resources_path
 def get_embedding_folder(dataset, architecture, seed, step, layer):
     suffix = pathlib.Path(f"embeddings/{dataset}/{architecture}/{seed}/{step}/{layer}")
     return resources_path / suffix
+
+DEFAULT_SIM_PARAMS = {
+    'metric_param_sweep_len': 30,
+    'auc_integration_method': 'average',
+    'auc_logscale': True,
+    'auc_adaptive_rbf_sigma': False,
+    'auc_adaptive_quantiles': (0.01, 0.8),
+}
+
+# new adaptive temperature config for softmax_rwka
+DEFAULT_SIM_PARAMS.update({
+    'auc_adaptive_temperature': False,
+    'auc_adaptive_temperature_quantiles': (0.01, 0.8),
+})
+
+
+def _to_jsonable(obj):
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    if isinstance(obj, (np.integer,)):
+        return int(obj)
+    if isinstance(obj, (np.floating,)):
+        return float(obj)
+    if isinstance(obj, dict):
+        return {k: _to_jsonable(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_to_jsonable(v) for v in obj]
+    return obj
 
 
 def load_embedding(
@@ -98,6 +129,7 @@ def score_local_pair(
     filename: str,
     metrics: list,
     metadata: dict = {},
+    sim_params: dict = DEFAULT_SIM_PARAMS,
 ) -> None:
     """
     Compute metric distances between two representations (in numpy array format) and
@@ -157,6 +189,79 @@ def score_local_pair(
     if "Procrustes" in metrics:
         logging.info("Computing GLD dist...")
         results["Procrustes"] = procrustes(rep1, rep2)
+
+    # My metrics: compute metric distance and also AUC distance if specified
+    for metric in AlignmentMetrics.SUPPORTED_METRICS:
+        if metric in metrics:
+            logging.info(f"Computing {metric} dist...")
+            try:
+                results[metric] = calc_metric_dist(
+                    feats_A=rep1, feats_B=rep2, metric_name=metric
+                )
+            except Exception as e:
+                logging.warning(f"Skipping metric {metric} due to error: {e}")
+        if metric + "_auc" in metrics:
+            logging.info(f"Computing {metric}_auc dist...")
+            try:
+                auc_result = calc_metric_auc_dist(
+                    feats_A=rep1,
+                    feats_B=rep2,
+                    metric_name=metric,
+                    sweep_len=sim_params['metric_param_sweep_len'],
+                    integration_method=sim_params['auc_integration_method'],
+                    logscale=sim_params['auc_logscale'],
+                    adaptive_rbf_sigma=sim_params.get('auc_adaptive_rbf_sigma', False),
+                    adaptive_quantiles=sim_params.get('auc_adaptive_quantiles', (0.01, 0.8)),
+                    adaptive_temperature=sim_params.get('auc_adaptive_temperature', False),
+                    adaptive_temperature_quantiles=sim_params.get('auc_adaptive_temperature_quantiles', (0.01, 0.8)),
+                    return_sweep=True,
+                )
+                # auc_result can be (auc_dist, param_vec, scores)
+                if isinstance(auc_result, tuple) and len(auc_result) == 3:
+                    auc_dist, param_vec, scores = auc_result
+                    results[metric + "_auc"] = auc_dist
+
+                    # save sweep data to a json file alongside the CSV
+                    try:
+                        csv_path = pathlib.Path(filename)
+                        sweeps_dir = csv_path.parent / pathlib.Path("sweeps")
+                        sweeps_dir.mkdir(parents=True, exist_ok=True)
+                        # construct a short, unique filename using metadata
+                        meta_parts = [
+                            str(results.get('architecture1', 'a1')),
+                            f"s{results.get('seed1', 's1')}",
+                            f"l{results.get('layer1', 'l1')}",
+                            "vs",
+                            str(results.get('architecture2', 'a2')),
+                            f"s{results.get('seed2', 's2')}",
+                            f"l{results.get('layer2', 'l2')}",
+                        ]
+                        # Include dims_deleted if present to avoid overwrites for different deletion levels
+                        dims_deleted = results.get('dims_deleted', None)
+                        if dims_deleted is not None:
+                            meta_parts.append(f"d{dims_deleted}")
+                        safe_name = "__".join(meta_parts)
+                        sweep_file = sweeps_dir / pathlib.Path(f"{metric}_auc__{safe_name}.json")
+                        # include sweep param name and values for downstream post-processing
+                        sweep_param = AlignmentMetrics.SWEEP_PARAMS.get(metric, {}).get('param')
+                        sweep_payload = {
+                            'metadata': results,
+                            'metric': metric,
+                            'param_name': sweep_param,
+                            'param_values': list(param_vec),
+                            'scores': list(scores),
+                        }
+                        with open(sweep_file, 'w') as sf:
+                            json.dump(_to_jsonable(sweep_payload), sf)
+                    except Exception as e:
+                        logging.warning(f"Failed saving sweep file for {metric}_auc: {e}")
+                else:
+                    # fallback if older return format
+                    results[metric + "_auc"] = auc_result
+            except Exception as e:
+                logging.warning(f"Skipping metric {metric}_auc due to error: {e}")
+    
+
 
     ## your metric here
     # function: my_metric_fn(rep1, rep2)

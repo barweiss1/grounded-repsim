@@ -1,0 +1,54 @@
+# Run only the pca_deletion experiment with YAML-driven parameters.
+run_id: "pca_deletion_run_001"
+
+# This is resolved relative to paths.resources_path.
+# Given resources_path points to sim_metric_resources, use "results" here.
+results_base: "results"
+
+experiments:
+  feather:
+    enabled: false
+
+  layer_exp:
+    enabled: false
+
+  pca_deletion:
+    enabled: true
+
+    compute_dists:
+      dataset: "mnli_matched_100"
+      architecture: "base"
+      step: 2000000
+      num_layers: 12
+      num_seeds: 10
+      total_dim: 768
+      dims_deleted: [0, 100, 200, 300, 400, 500, 600, 650, 700, 725, 750, 758, 763, 767]
+      metrics: ["softmax_rwka", "softmax_rwka_auc", "PWCCA", "mean_cca_corr", "mean_sq_cca_corr", "CSA", "CKA", "Procrustes", "cka_rbf", "cka_rbf_auc", "mutual_knn", "mutual_knn_auc", "cknna"]
+      # sweep and AUC options
+      metric_param_sweep_len: 30
+      auc_integration_method: "average"   # 'trapezoidal' or 'average'
+      auc_logscale: true
+      # adaptive rbf sigma uses pairwise distance quantiles (feats_A and feats_B)
+      auc_adaptive_rbf_sigma: true
+      auc_adaptive_quantiles: [0.01, 0.8]
+      # adaptive temperature for softmax_rwka uses quantiles of abs inner-products
+      auc_adaptive_temperature: true
+      auc_adaptive_temperature_quantiles: [0.01, 0.8]
+
+    compute_full_df:
+      scores_path: "scores/pca_deletion/scores.pkl"
+    script:
+      scores_path: "scores/pca_deletion/scores.pkl"
+      probe_task: "SST-2"
+      REF_SEEDS: [1, 2, 3, 4, 5, 6, 7]
+      LAYERS: [7, 8, 9, 10, 11]
+      num_layers: 12
+      metrics: ["softmax_rwka", "softmax_rwka_auc", "PWCCA", "CKA", "Procrustes", "cka_rbf_auc", "mutual_knn_auc"]
+      # same sweep options available to script-level AUC computations
+      metric_param_sweep_len: 30
+      auc_logscale: true
+      auc_adaptive_temperature: true
+      auc_adaptive_temperature_quantiles: [0.01, 0.8]
+
+  pretrain_finetune:
+    enabled: false

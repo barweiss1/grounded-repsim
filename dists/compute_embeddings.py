@@ -2,7 +2,16 @@ import os
 import json
 import numpy as np
 
-from embedding_utils import *
+import pathlib
+import sys
+
+sys.path.append(os.path.abspath(".."))
+from paths import resources_path
+
+
+def get_embedding_folder(dataset, architecture, seed, step, layer):
+    suffix = pathlib.Path(f"embeddings/{dataset}/{architecture}/{seed}/{step}/{layer}")
+    return resources_path / suffix
 
 # TODO: this does not work yet, fix all the paths
 EMBEDDING_PATH = "/scratch/users/repsim/embeddings"  # deprecated

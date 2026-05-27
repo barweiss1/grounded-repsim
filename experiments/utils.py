@@ -9,11 +9,10 @@ def qs(xs):
     return np.array(list(map(lambda x: pc(xs, x, "rank") / 100, xs)))
 
 
-def plot_rank_corrs(rho, rho_p, tau, tau_p, METRICS, scatter=False, title=""):
-    fig, ax = plt.subplots(2, 2, figsize=(10, 10))
 
+def plot_rank_corrs(rho, rho_p, tau, tau_p, METRICS, scatter=False, title="", save_path=None):
+    fig, ax = plt.subplots(2, 2, figsize=(15, 10))
     fig.suptitle(title)
-
     if scatter:
         x, y = [], []
         for i, metric in enumerate(METRICS):
@@ -30,8 +29,8 @@ def plot_rank_corrs(rho, rho_p, tau, tau_p, METRICS, scatter=False, title=""):
         )
     ax[0, 0].set_title("Spearman's rho")
     ax[0, 0].set_xticks(list(range(len(METRICS))))
+    ax[0, 0].tick_params(axis='x', rotation=45)
     ax[0, 0].set_xticklabels(METRICS)
-
     if scatter:
         x, y = [], []
         for i, metric in enumerate(METRICS):
@@ -48,9 +47,9 @@ def plot_rank_corrs(rho, rho_p, tau, tau_p, METRICS, scatter=False, title=""):
         )
     ax[0, 1].set_title("Spearman's rho: p-values")
     ax[0, 1].set_xticks(list(range(len(METRICS))))
+    ax[0, 1].tick_params(axis='x', rotation=45)
     ax[0, 1].set_xticklabels(METRICS)
     ax[0, 1].set_yscale("log")
-
     if scatter:
         x, y = [], []
         for i, metric in enumerate(METRICS):
@@ -67,8 +66,8 @@ def plot_rank_corrs(rho, rho_p, tau, tau_p, METRICS, scatter=False, title=""):
         )
     ax[1, 0].set_title("Kendall's tau")
     ax[1, 0].set_xticks(list(range(len(METRICS))))
+    ax[1, 0].tick_params(axis='x', rotation=45)
     ax[1, 0].set_xticklabels(METRICS)
-
     if scatter:
         x, y = [], []
         for i, metric in enumerate(METRICS):
@@ -85,10 +84,15 @@ def plot_rank_corrs(rho, rho_p, tau, tau_p, METRICS, scatter=False, title=""):
         )
     ax[1, 1].set_title("Kendall's tau: p-values")
     ax[1, 1].set_xticks(list(range(len(METRICS))))
+    ax[1, 1].tick_params(axis='x', rotation=45)
     ax[1, 1].set_xticklabels(METRICS)
     ax[1, 1].set_yscale("log")
-
-    plt.show()
+    fig.tight_layout()
+    if save_path:
+        fig.savefig(save_path)
+        plt.close(fig)
+    else:
+        plt.show()
 
 
 def get_rank_corrs(sub_df, metric, task):
@@ -133,6 +137,10 @@ def aggregate_rank_corrs(
         sub_df = sub_df_fn(full_df, task, ref_depth)
 
         for metric in METRICS:
+            # if metric not in df columns, skip and print
+            if metric not in sub_df.columns:
+                print(f"Metric {metric} not found in dataframe columns. Skipping.")
+                continue
             rho_corr, rho_os_p, tau_corr, tau_os_p, bad_frac = get_rank_corrs(
                 sub_df, metric, task
             )

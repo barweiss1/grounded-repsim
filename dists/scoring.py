@@ -1,4 +1,6 @@
 import numpy as np
+from metrics import AlignmentMetrics
+from metrics_utils import sweep_metric_over_param, integrate_metric_over_param, map_param_name_to_kwargs
 
 ## CCA
 
@@ -123,8 +125,69 @@ def procrustes(A, B):
     return A_sq_frob + B_sq_frob - 2 * nuc
 
 
-# your metric here
+# ---------------------------- My Metrics ----------------------------
 
 
-# def my_metric_fn(A, B):
-#      pass
+def calc_metric_auc_dist(
+    feats_A,
+    feats_B,
+    metric_name,
+    sweep_len,
+    integration_method='trapezoidal',
+    logscale=False,
+    adaptive_rbf_sigma=False,
+    adaptive_quantiles=(0.01, 0.8),
+    adaptive_temperature=False,
+    adaptive_temperature_quantiles=(0.01, 0.8),
+    return_sweep=False,
+):
+    """
+    Calculates a specificied alignment metric across a range of 
+    hyperparemeter values defined in sweep_config,
+    and returns the average score across all hyperparameter values.
+    Coresponding to the AUC of the metric curve across 
+    the hyperparameter sweep.
+    """
+    sweep_config = AlignmentMetrics.SWEEP_PARAMS[metric_name]
+    # choose which quantiles to use for adaptive sweep
+    adaptive_q = adaptive_quantiles
+    if adaptive_temperature and adaptive_temperature_quantiles is not None:
+        adaptive_q = adaptive_temperature_quantiles
+
+    param_vec, scores = sweep_metric_over_param(
+        feats_A,
+        feats_B,
+        metric_name,
+        sweep_config,
+        sweep_len,
+        logscale=logscale,
+        adaptive_rbf_sigma=adaptive_rbf_sigma,
+        adaptive_temperature=adaptive_temperature,
+        adaptive_quantiles=adaptive_q,
+    )
+
+    auc_score = integrate_metric_over_param(param_vec, scores, integration_method)
+    if return_sweep:
+        return 1 - auc_score, param_vec, scores
+    return 1 - auc_score
+
+
+def calc_metric_dist(
+    feats_A,
+    feats_B,
+    metric_name,
+):
+    """
+    Calculates a specificied alignment metric between two representations.
+    If the metric has a hyperparameter, then calculates the AUC of the metric curve across 
+    a hyperparameter sweep defined by sweep_config and sweep_len.
+    """
+
+    sweep_config = AlignmentMetrics.SWEEP_PARAMS[metric_name]
+    param_name = sweep_config['param']
+    kwargs = map_param_name_to_kwargs(param_name)
+
+    score = AlignmentMetrics.measure(feats_A=feats_A, feats_B=feats_B, metric=metric_name, **kwargs)
+    
+    return 1 - score
+

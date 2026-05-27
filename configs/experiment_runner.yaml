@@ -1,0 +1,27 @@
+# Example experiment runner config for grounded-repsim
+run_id: "test_run_001"
+experiments:
+  feather:
+    enabled: true
+    compute_dists:
+      metrics: ["PWCCA", "mean_cca_corr", "mean_sq_cca_corr", "CSA", "CKA", "Procrustes", "cka_rbf", "cka_rbf_quantile", "cka_rbf_auc", "mutual_knn", "mutual_knn_auc", "cknna"]
+      dataset: "mnli_matched_100"
+      architecture: "feather"
+      step: 0
+      num_layers: 12
+      num_seeds: 100
+    compute_full_df:
+      # paths will be resolved by the runner
+      # can override if needed
+      use_scores: true
+    script:
+      task: "lex_nonent"
+      metrics: ["PWCCA", "mean_cca_corr", "mean_sq_cca_corr", "CSA", "CKA", "Procrustes", "cka_rbf", "cka_rbf_quantile", "cka_rbf_auc", "mutual_knn", "mutual_knn_auc", "cknna"]
+      num_layers: 12
+  layer_exp:
+    enabled: false
+  pca_deletion:
+    enabled: false
+  pretrain_finetune:
+    enabled: false
+results_base: "sim_metric_resources/results"

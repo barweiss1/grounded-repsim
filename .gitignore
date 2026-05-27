@@ -2,3 +2,5 @@ __pycache__
 slurm*
 */__pycache__
 */results.txt
+.venv
+sim_metric_resources/

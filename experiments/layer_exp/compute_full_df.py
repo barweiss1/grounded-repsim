@@ -12,10 +12,10 @@ from paths import resources_path
 
 # paths
 scores_path = resources_path / pathlib.Path("scores/layer_exp/scores.pkl")
-dists_path = resources_path / pathlib.Path("dists/layer_exp/dists.csv")
-full_df_path = resources_path / pathlib.Path("full_dfs/layer_exp/full_df.csv")
-# dists_path = resources_path / pathlib.Path("dists/layer_exp/dists_self_computed.csv")
-# full_df_path = resources_path / pathlib.Path("full_dfs/layer_exp/full_df_self_computed.csv")
+# dists_path = resources_path / pathlib.Path("dists/layer_exp/dists.csv")
+# full_df_path = resources_path / pathlib.Path("full_dfs/layer_exp/full_df.csv")
+dists_path = resources_path / pathlib.Path("dists/layer_exp/dists_self_computed.csv")
+full_df_path = resources_path / pathlib.Path("full_dfs/layer_exp/full_df_self_computed.csv")
 
 # list of probing tasks
 task_list = ["QNLI", "SST-2"]
@@ -53,3 +53,17 @@ def get_full_df(scores_path, dists_path, full_df_path):
     full_df.to_csv(full_df_path)
     print("saved")
     return full_df
+
+def run_compute_full_df(cfg, results_dir, resources_path):
+    import pathlib
+    scores_path = resources_path / pathlib.Path(cfg.get('scores_path', 'scores/layer_exp/scores.pkl'))
+    dists_path = pathlib.Path(results_dir) / 'dists_self_computed.csv'
+    full_df_path = pathlib.Path(results_dir) / 'full_df_self_computed.csv'
+    get_full_df(scores_path, dists_path, full_df_path)
+
+if __name__ == "__main__":
+    get_full_df(scores_path, dists_path, full_df_path)
+    # Uncomment the following lines if you want to use run_compute_full_df
+    # cfg = {}  # Define your configuration here
+    # results_dir = "your_results_directory"  # Define your results directory here
+    # run_compute_full_df(cfg, results_dir, resources_path)

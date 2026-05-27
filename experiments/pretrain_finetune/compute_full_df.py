@@ -11,11 +11,7 @@ sys.path.append(os.path.abspath("../.."))
 from paths import resources_path
 
 # new paths
-scores_path = resources_path / pathlib.Path("scores/pretrain_finetune/scores.pkl")
-dists_path = resources_path / pathlib.Path("dists/pretrain_finetune/dists.csv")
-full_df_path = resources_path / pathlib.Path("full_dfs/pretrain_finetune/full_df.csv")
-# dists_path = resources_path / pathlib.Path("dists/pretrain_finetune/dists_self_computed.csv")
-# full_df_path = resources_path / pathlib.Path("full_dfs/pretrain_finetune/full_df_self_computed.csv")
+scores_path_default = resources_path / pathlib.Path("scores/pretrain_finetune/scores.pkl")
 
 # constants
 num_layers = 8
@@ -53,7 +49,7 @@ def collect_scores(scores_path):
     lex_nonent_idxes = [
         idx
         for idx, d in enumerate(data_dict)
-        if ("HANS" in d["guid"])
+        if ("HANS" in d["guid"]) 
         and (d["heuristic"] == "lexical_overlap")
         and (d["label"] == "non-entailment")
     ]
@@ -131,3 +127,10 @@ def get_full_df(scores_path, dists_path, full_df_path):
     print("saved")
 
     return full_df
+
+def run_compute_full_df(cfg, results_dir, resources_path):
+    import pathlib
+    scores_path = resources_path / pathlib.Path(cfg.get('scores_path', 'scores/pretrain_finetune/scores.pkl'))
+    dists_path = pathlib.Path(results_dir) / 'dists_self_computed.csv'
+    full_df_path = pathlib.Path(results_dir) / 'full_df_self_computed.csv'
+    get_full_df(scores_path, dists_path, full_df_path)
