@@ -4,3 +4,4 @@ slurm*
 */results.txt
 .venv
 sim_metric_resources/
+AGENTS.md
