@@ -12,9 +12,18 @@ except Exception:
     torch = None
 
 from paths import resources_path
-sys.path.append(os.path.abspath("dists/"))
+
+REPO_DIR = pathlib.Path(__file__).resolve().parent
+DISTS_DIR = REPO_DIR / "dists"
+if str(DISTS_DIR) not in sys.path:
+    sys.path.append(str(DISTS_DIR))
 
 def load_config(config_path):
+    config_path = pathlib.Path(config_path)
+    if not config_path.is_absolute():
+        cwd_path = pathlib.Path.cwd() / config_path
+        repo_path = REPO_DIR / config_path
+        config_path = cwd_path if cwd_path.exists() else repo_path
     with open(config_path, 'r') as f:
         return yaml.safe_load(f)
 
@@ -30,7 +39,7 @@ def run_experiment(exp_name, exp_cfg, results_base, run_id, device=None):
     ensure_dir(exp_dir)
     save_json(exp_cfg, os.path.join(exp_dir, 'run_config.json'))
 
-    exp_path = pathlib.Path(__file__).parent / 'experiments' / exp_name
+    exp_path = REPO_DIR / 'experiments' / exp_name
     sys.path.insert(0, str(exp_path))
 
     # 1. compute_dists

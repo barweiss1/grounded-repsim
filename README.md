@@ -33,8 +33,13 @@ pip install -r requirements.txt
 ```
 
 Download `sim_metric_resources.tar` from
-<https://zenodo.org/record/5117844>, extract it, and set `resources_path` in
-`paths.py` to the extracted `sim_metric_resources` directory.
+<https://zenodo.org/record/5117844> and extract it. By default the code expects
+a `sim_metric_resources` directory next to this repository. On servers or other
+machines, set an override:
+
+```bash
+export SIM_METRIC_RESOURCES=/path/to/sim_metric_resources
+```
 
 The resources directory is expected to contain:
 
@@ -51,6 +56,13 @@ Prefer the YAML runner for new work:
 
 ```bash
 python run_experiments.py --config configs/layer_exp_fast.yaml --device auto
+```
+
+The singular wrapper also works for server scripts that call
+`run_experiment.py`:
+
+```bash
+python run_experiment.py --config configs/layer_exp_fast.yaml --device auto
 ```
 
 Each enabled experiment can run up to three stages:

@@ -1,5 +1,13 @@
+import os
 from pathlib import Path
 
-# modify this: address of the sim_metric_resources folder you downloaded
-# resources_path = Path("/scratch/users/repsim/sim_metric_resources")
-resources_path = Path("/Users/barweiss/Code/grounded-repsim/sim_metric_resources")
+# Override this on servers with:
+#   export SIM_METRIC_RESOURCES=/path/to/sim_metric_resources
+#
+# By default, use a sim_metric_resources directory next to this repository.
+resources_path = Path(
+    os.environ.get(
+        "SIM_METRIC_RESOURCES",
+        Path(__file__).resolve().parent / "sim_metric_resources",
+    )
+)
