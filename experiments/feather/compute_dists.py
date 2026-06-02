@@ -29,17 +29,3 @@ def run_compute_dists(cfg, results_dir, resources_path, device=None):
                 rep1_dict = {"dataset": dataset, "architecture": architecture, "seed": seed1, "step": step, "layer": layer}
                 rep2_dict = {"dataset": dataset, "architecture": architecture, "seed": seed2, "step": step, "layer": layer}
                 score_pair_to_csv(rep1_dict, rep2_dict, result_filename, metrics)
-
-# --- Legacy CLI fallback ---
-if __name__ == "__main__":
-    from paths import resources_path
-    cfg = {
-        'metrics': ["PWCCA", "mean_cca_corr", "mean_sq_cca_corr", "CSA", "CKA", "Procrustes", 'cka_rbf', 'cka_rbf_quantile', 'cka_rbf_auc', 'mutual_knn', 'mutual_knn_auc', 'cknna'],
-        'dataset': "mnli_matched_100",
-        'architecture': "feather",
-        'step': 0,
-        'num_layers': 12,
-        'num_seeds': 100
-    }
-    results_dir = resources_path / pathlib.Path("dists/feather/")
-    run_compute_dists(cfg, results_dir, resources_path)

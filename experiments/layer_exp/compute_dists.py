@@ -2,12 +2,10 @@
 
 import pathlib
 from icecream import ic
-import os
 import sys
 
 BASE_DIR = pathlib.Path(__file__).resolve().parents[2]
 sys.path.append(str(BASE_DIR))
-from paths import resources_path
 from experiments.common import get_run_paths
 
 sys.path.append(str(BASE_DIR / "dists"))
@@ -47,10 +45,3 @@ def run_compute_dists(cfg, results_dir, resources_path, device=None):
                         rep1_dict = {"dataset": dataset, "architecture": architecture, "seed": seed1, "step": step, "layer": layer1}
                         rep2_dict = {"dataset": dataset, "architecture": architecture, "seed": seed2, "step": step, "layer": layer2}
                         score_pair_to_csv(rep1_dict, rep2_dict, result_filename, metrics)
-
-
-if __name__ == '__main__':
-    # legacy behavior
-    cfg = {}
-    results_dir = resources_path / pathlib.Path('dists/layer_exp/')
-    run_compute_dists(cfg, results_dir, resources_path)

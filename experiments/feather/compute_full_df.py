@@ -3,7 +3,6 @@
 
 import pandas as pd
 import pathlib
-import os
 import sys
 
 BASE_DIR = pathlib.Path(__file__).resolve().parents[2]
@@ -59,12 +58,4 @@ def run_compute_full_df(cfg, results_dir, resources_path, device=None):
     scores_path = resolve_resource(resources_path, cfg.get('scores_path', 'scores/feather/scores.csv'))
     dists_path = paths["dists"]
     full_df_path = paths["full_df"]
-    get_full_df(scores_path, dists_path, full_df_path)
-
-# --- Legacy CLI fallback ---
-if __name__ == "__main__":
-    from paths import resources_path
-    scores_path = resources_path / pathlib.Path("scores/feather/scores.csv")
-    dists_path = resources_path / pathlib.Path("dists/feather/dists_self_computed.csv")
-    full_df_path = resources_path / pathlib.Path("full_dfs/feather/full_df_self_computed.csv")
     get_full_df(scores_path, dists_path, full_df_path)

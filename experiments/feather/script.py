@@ -28,7 +28,7 @@ except ImportError:
 def run_experiment_script(cfg, results_dir, resources_path, device=None):
     paths = get_run_paths(results_dir)
     scores_path = resolve_resource(resources_path, cfg.get('scores_path', 'scores/feather/scores.csv'))
-    full_df_path = resolve_resource(resources_path, cfg['full_df_path']) if 'full_df_path' in cfg else paths["full_df"]
+    full_df_path = paths["full_df"]
     results_path = paths["results"]
 
     full_df = pd.read_csv(full_df_path)
@@ -60,16 +60,3 @@ def run_experiment_script(cfg, results_dir, resources_path, device=None):
 
     write_rank_corr_results(results_path, metrics_filtered, rho, rho_p, tau, tau_p, bad_fracs)
     save_rank_corr_plot(results_dir, rho, rho_p, tau, tau_p, metrics_filtered, task)
-
-
-if __name__ == '__main__':
-    from paths import resources_path
-
-    cfg = {
-        'scores_path': 'scores/feather/scores.csv',
-        'task': 'lex_nonent',
-        'num_layers': 12,
-        'metrics': ["PWCCA", "mean_cca_corr", "mean_sq_cca_corr", "CSA", "CKA", "Procrustes", 'cka_rbf', 'cka_rbf_quantile', 'cka_rbf_auc', 'mutual_knn', 'mutual_knn_auc', 'cknna'],
-    }
-    results_dir = resources_path / pathlib.Path("full_dfs/feather/")
-    run_experiment_script(cfg, results_dir, resources_path)

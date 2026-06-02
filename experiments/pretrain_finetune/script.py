@@ -1,7 +1,6 @@
 import pathlib
 import pandas as pd
 import sys
-import os
 
 BASE_DIR = pathlib.Path(__file__).resolve().parents[1]
 sys.path.append(str(BASE_DIR))
@@ -13,7 +12,6 @@ except ImportError:
     from compute_full_df import collect_scores
 from experiments.common import (
     filter_available_metrics,
-    get_config_value,
     get_run_paths,
     resolve_resource,
     save_rank_corr_plot,
@@ -27,7 +25,7 @@ except ImportError:
 def run_experiment_script(cfg, results_dir, resources_path, device=None):
     paths = get_run_paths(results_dir)
     scores_path = resolve_resource(resources_path, cfg.get('scores_path', 'scores/pretrain_finetune/scores.pkl'))
-    full_df_path = resolve_resource(resources_path, cfg['full_df_path']) if 'full_df_path' in cfg else paths["full_df"]
+    full_df_path = paths["full_df"]
     results_path = paths["results"]
 
     full_df = pd.read_csv(full_df_path)
@@ -61,7 +59,7 @@ def run_experiment_script(cfg, results_dir, resources_path, device=None):
 
     metrics = cfg.get('metrics', ["Procrustes", "CKA", "PWCCA"])
     num_layers = cfg.get('num_layers', 8)
-    layers = get_config_value(cfg, 'layers', None, 'LAYERS')
+    layers = cfg.get('layers')
     tasks = cfg.get('tasks', ["STRESS_ANTONYMY", "STRESS_NUMERICAL"])
     metrics_filtered = filter_available_metrics(metrics, full_df)
 
@@ -81,16 +79,3 @@ def run_experiment_script(cfg, results_dir, resources_path, device=None):
             mode="w" if idx == 0 else "a",
         )
         save_rank_corr_plot(results_dir, rho, rho_p, tau, tau_p, metrics_filtered, task)
-
-
-if __name__ == '__main__':
-    from paths import resources_path
-    cfg = {
-        'scores_path': 'scores/pretrain_finetune/scores.pkl',
-        'full_df_path': 'full_dfs/pretrain_finetune/full_df.csv',
-        'tasks': ["STRESS_ANTONYMY"],
-        'num_layers': 8,
-        'metrics': ["Procrustes", "CKA", "PWCCA"],
-    }
-    results_dir = resources_path / pathlib.Path("full_dfs/pretrain_finetune/")
-    run_experiment_script(cfg, results_dir, resources_path)

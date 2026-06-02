@@ -29,6 +29,6 @@ experiments:
 
     script:
       scores_path: "scores/pretrain_finetune/scores.pkl"
-      tasks: ["STRESS_ANTONYMY", "STRESS_NUMERICAL"]
+      tasks: ["STRESS_ANTONYMY", "STRESS_OVERLAP", "STRESS_SPELL", "STRESS_NUMERICAL", "STRESS_LENGTH", "STRESS_NEGATION", "STRESS_NUMERICAL", "lex_nonent", "BREAK", "dev_mismatched", "dev_matched", "HANS", "snli_train", "snli_dev", "train"]
       num_layers: 8
       metrics: ["softmax_rwka", "softmax_rwka_auc", "rbf_rwka", "rbf_rwka_auc", "PWCCA", "CKA", "Procrustes", "cka_rbf_auc", "mutual_knn_auc", "cknna"]

@@ -2,13 +2,11 @@
 
 import pathlib
 from icecream import ic
-import os
 import sys
 import itertools
 
 BASE_DIR = pathlib.Path(__file__).resolve().parents[2]
 sys.path.append(str(BASE_DIR))
-from paths import resources_path
 from experiments.common import get_run_paths
 
 sys.path.append(str(BASE_DIR / "dists"))
@@ -43,9 +41,3 @@ def run_compute_dists(cfg, results_dir, resources_path, device=None):
                 rep1_dict = {"dataset": dataset, "architecture": architecture, "seed": pseed1, "step": fseed1, "layer": layer}
                 rep2_dict = {"dataset": dataset, "architecture": architecture, "seed": pseed2, "step": fseed2, "layer": layer}
                 score_pair_to_csv(rep1_dict, rep2_dict, result_filename, metrics)
-
-
-if __name__ == '__main__':
-    cfg = {}
-    results_dir = resources_path / pathlib.Path('dists/pretrain_finetune/')
-    run_compute_dists(cfg, results_dir, resources_path)

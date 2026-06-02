@@ -5,14 +5,10 @@ import pickle as pkl
 import pathlib
 import pandas as pd
 import sys
-import os
 
-sys.path.append(os.path.abspath("../.."))
-from paths import resources_path
+BASE_DIR = pathlib.Path(__file__).resolve().parents[2]
+sys.path.append(str(BASE_DIR))
 from experiments.common import get_run_paths, resolve_resource
-
-# new paths
-scores_path_default = resources_path / pathlib.Path("scores/pretrain_finetune/scores.pkl")
 
 # constants
 num_layers = 8

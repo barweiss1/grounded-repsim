@@ -1,13 +1,11 @@
 #!/usr/local/linux/anaconda3.8/bin/python
 
 import numpy as np
-import os
 import pathlib
 import sys
 
 BASE_DIR = pathlib.Path(__file__).resolve().parents[2]
 sys.path.append(str(BASE_DIR))
-from paths import resources_path
 from experiments.common import get_run_paths
 
 sys.path.append(str(BASE_DIR / "dists"))
@@ -90,9 +88,3 @@ def run_compute_dists(cfg, results_dir, resources_path, device=None):
                         filename=result_filename,
                         sim_params=sim_params,
                     )
-
-
-if __name__ == '__main__':
-    cfg = {}
-    results_dir = resources_path / pathlib.Path('dists/pca_deletion/')
-    run_compute_dists(cfg, results_dir, resources_path)

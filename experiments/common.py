@@ -33,15 +33,6 @@ def resolve_resource(resources_path, relative_path):
     return pathlib.Path(resources_path) / path
 
 
-def get_config_value(cfg, canonical_key, default=None, *legacy_keys):
-    if canonical_key in cfg:
-        return cfg[canonical_key]
-    for key in legacy_keys:
-        if key in cfg:
-            return cfg[key]
-    return default
-
-
 def filter_available_metrics(requested_metrics, df, warn=True):
     metrics = [metric for metric in requested_metrics if metric in df.columns]
     missing = [metric for metric in requested_metrics if metric not in df.columns]

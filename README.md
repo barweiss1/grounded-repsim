@@ -72,21 +72,21 @@ For example, with `results_base: "results"` and
 sim_metric_resources/results/layer_exp/fast_last_layers_run/
 ```
 
-The legacy direct scripts are still supported, but they may use historical
-hard-coded locations under `sim_metric_resources/dists/` and
-`sim_metric_resources/full_dfs/`. Use the YAML runner when possible to avoid
-overwriting shared resource files.
+`run_experiments.py` is the only supported experiment execution path. Experiment
+modules expose runner-callable functions and should not be run directly. The
+notebooks remain exploratory artifacts and may read precomputed files from
+`sim_metric_resources/full_dfs/`.
 
 ## Config Conventions
 
-Configs should prefer lowercase keys:
+Configs must use canonical lowercase keys:
 
 - `layers`
 - `ref_seeds`
 - `task`
 
-The code still accepts older aliases such as `LAYERS`, `REF_SEEDS`, and
-`probe_task` during the gradual cleanup.
+Older aliases such as `LAYERS`, `REF_SEEDS`, and `probe_task` are no longer
+supported by the runner.
 
 Useful configs:
 
