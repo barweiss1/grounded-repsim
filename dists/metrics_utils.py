@@ -31,6 +31,10 @@ def _pairwise_distance_ratios(feats, q_low=0.01, q_high=0.8, eps=1e-8):
 
 
 def _inner_product_ratios(feats, q_low=0.01, q_high=0.8, eps=1e-8):
+    """
+    Potentially deprecate this function, since quantile based adaptive temperature sweep seems to perform not so well.
+    Sweep over the dynamic range instead.
+    """
     feats_t = _to_torch_tensor(feats).double()
     if feats_t.ndim != 2:
         raise ValueError("feats must be a 2D array or tensor.")
@@ -38,18 +42,15 @@ def _inner_product_ratios(feats, q_low=0.01, q_high=0.8, eps=1e-8):
     if feats_t.shape[0] < 2:
         return 1.0, 1.0
 
-    ip = torch.abs(feats_t @ feats_t.T)
-    tril = torch.tril_indices(ip.shape[0], ip.shape[1], offset=-1)
-    vals = ip[tril[0], tril[1]]
-    if vals.numel() == 0:
+    ip = feats_t @ feats_t.T
+    ip_range = torch.max(ip) - torch.min(ip)
+    if ip_range < eps:
         return 1.0, 1.0
+    
+    low_val = q_low * ip_range
+    high_val = q_high * ip_range
 
-    median = torch.quantile(vals, 0.5).item()
-    median = max(median, eps)
-    low_val = torch.quantile(vals, float(q_low)).item()
-    high_val = torch.quantile(vals, float(q_high)).item()
-
-    return low_val / median, high_val / median
+    return q_low, q_high
 
 
 def get_adaptive_rbf_sigma_sweep(
@@ -133,7 +134,7 @@ def map_param_name_to_kwargs(param_name, param_value=None, local=False):
         val = param_value if param_value is not None else 20
         kwargs = {'topk': int(val)}
     elif param_name == 'temperature':
-        val = param_value if param_value is not None else 0.5
+        val = param_value if param_value is not None else 0.1
         kwargs = {'temperature': val}
     else:
         raise ValueError(f"Unsupported sweep parameter: {param_name}")

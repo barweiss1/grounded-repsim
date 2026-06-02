@@ -23,16 +23,16 @@ experiments:
       num_seeds: 3               # Fast: only 3 seeds instead of 10
       total_dim: 768
       dims_deleted: [0, 100, 200, 300, 400, 500, 600, 650, 700, 725, 750, 758, 763, 767]  # Same full range
-      # metrics: ["softmax_rwka", "softmax_rwka_auc", "PWCCA", "mean_cca_corr", "mean_sq_cca_corr", "CSA", "CKA", "Procrustes", "cka_rbf", "cka_rbf_auc", "mutual_knn", "mutual_knn_auc", "cknna"]
-      metrics: ["softmax_rwka", "softmax_rwka_auc"]
+      metrics: ["rbf_rwka", "rbf_rwka_auc", "softmax_rwka", "softmax_rwka_auc", "PWCCA", "mean_cca_corr", "mean_sq_cca_corr", "CSA", "CKA", "Procrustes", "cka_rbf", "cka_rbf_auc", "mutual_knn", "mutual_knn_auc", "cknna", "cknna_auc"]
+      # metrics: ["CKA", "softmax_rwka", "softmax_rwka_auc", "cka_rbf", "cka_rbf_auc", "mutual_knn", "mutual_knn_auc"]
       # sweep and AUC options
       metric_param_sweep_len: 30
       auc_integration_method: "average"
       auc_logscale: true
       auc_adaptive_rbf_sigma: false
       auc_adaptive_quantiles: [0.01, 0.8]
-      auc_adaptive_temperature: true
-      auc_adaptive_temperature_quantiles: [0.01, 0.8]
+      auc_adaptive_temperature: false
+      auc_adaptive_temperature_quantiles: [0.001, 0.5]
 
     compute_full_df:
       scores_path: "scores/pca_deletion/scores.pkl"
@@ -43,11 +43,11 @@ experiments:
       REF_SEEDS: [1, 2]          # Fast: only 2 ref seeds
       LAYERS: [10, 11]           # Fast: use last layers
       num_layers: 12
-      metrics: ["PWCCA", "CKA", "Procrustes", "cka_rbf_auc", "mutual_knn_auc"]
+      metrics: ["rbf_rwka", "rbf_rwka_auc", "softmax_rwka", "softmax_rwka_auc", "PWCCA", "CKA", "Procrustes", "cka_rbf_auc", "mutual_knn_auc"]
       metric_param_sweep_len: 30
       auc_logscale: true
       auc_adaptive_temperature: false
-      auc_adaptive_temperature_quantiles: [0.01, 0.8]
+      auc_adaptive_temperature_quantiles: [0.001, 0.5]
 
   pretrain_finetune:
     enabled: false

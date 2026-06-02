@@ -1,4 +1,3 @@
-avg_rho = {metric: round(np.mean(rho[metric]), 3) for metric in metrics_filtered}
 import numpy as np
 import pandas as pd
 import pathlib
@@ -7,8 +6,9 @@ import sys
 import os
 from icecream import ic
 
-
-sys.path.append(os.path.abspath("../"))
+BASE_DIR = pathlib.Path(__file__).resolve().parents[1]
+sys.path.append(str(BASE_DIR))
+# sys.path.append(os.path.abspath("../"))
 from utils import plot_rank_corrs, get_rank_corrs
 
 def run_experiment_script(cfg, results_dir, resources_path):

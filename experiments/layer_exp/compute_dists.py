@@ -21,15 +21,22 @@ def run_compute_dists(cfg, results_dir, resources_path):
     step = cfg.get('step', 2000000)
     num_layers = cfg.get('num_layers', 12)
     seeds_list = cfg.get('seeds_list', list(range(1, 11)))
+    layer_indices = cfg.get('layers')
+    num_seeds = cfg.get('num_seeds', 10)
+
+    if layer_indices is None:
+        layer_indices = list(range(num_layers))
+    else:
+        layer_indices = [int(layer) for layer in layer_indices]
 
     result_filename = pathlib.Path(results_dir) / 'dists_self_computed.csv'
     open(result_filename, 'w').close()
 
-    pbar = tqdm(total=len(seeds_list) * len(seeds_list) * num_layers * num_layers)
+    pbar = tqdm(total=len(seeds_list) * len(seeds_list) * len(layer_indices) * len(layer_indices))
     for idx, seed1 in enumerate(seeds_list):
         for seed2 in seeds_list[idx:]:
-            for layer1 in range(num_layers):
-                for layer2 in range(num_layers):
+            for layer1 in layer_indices:
+                for layer2 in layer_indices:
                     pbar.update(1)
                     if seed1 == seed2 and layer1 > layer2:
                         pass
