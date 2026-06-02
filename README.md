@@ -1,54 +1,158 @@
 # Grounding Representation Similarity with Statistical Testing
-This repo contains code to replicate the results in [our paper](https://arxiv.org/abs/2108.01661), which evaluates representation similarity measures with a series of benchmark tasks. The experiments in the paper require first computing neural network embeddings of a dataset and computing accuracy scores of that neural network, which we provide pre-computed. This repo contains the code that implements our benchmark evaluation, given these embeddings and performance scores.
 
-## File descriptions
+This repository contains code for reproducing and extending the experiments in
+[Grounding Representation Similarity with Statistical Testing](https://arxiv.org/abs/2108.01661).
+The benchmark evaluates representation-similarity measures by comparing
+dissimilarities between neural network representations with downstream accuracy
+differences.
 
-### This repo: `sim_metric`
-This repo is organized as follows:
-* `experiments/` contains code to run the experiments in part 4 of the paper:
-    - `layer_exp` is the first experiment in part 4, with different random seeds and layer depths
-    - `pca_deletion` is the second experiment in part 4, with different numbers of principal components deleted
-    - `feather` is the first experiment in part 4.1, with different finetuning seeds
-    - `pretrain_finetune` is the second experiment in part 4.2, with different pretraining and finetuning seeds
-* `dists/` contains functions to compute dissimilarities between representations.
+The expensive embeddings and accuracy scores are provided as precomputed
+resources. This repository contains the experiment and metric code that consumes
+those resources.
 
-### Pre-computed resources: `sim_metric_resources`
-The pre-computed embeddings and scores available at <https://zenodo.org/record/5117844> can be downloaded and unzipped into a folder titled `sim_metric_resources`, which is organized as follows:
-* `embeddings` contains the embeddings between which we are computing dissimilarities
-* `dists` contains, for every experiment, the dissimilarities between the corresponding embeddings, for every metric:
-    - `dists.csv` contains the precomputed dissimilarities
-    - `dists_self_computed.csv` contains the dissimilarities computed by running `compute_dists.py` (see below)
-* `scores` contains, for every experiment, the accuracy scores of the embeddings
-* `full_dfs` contains, for every experiment, a csv file aggregating the dissimilarities and accuracy differences between the embeddings
+## Repository Layout
 
+- `dists/` implements representation dissimilarity metrics and pairwise scoring.
+- `experiments/` contains the experiment-specific pipelines:
+  - `layer_exp`: different random seeds and layer depths.
+  - `pca_deletion`: different numbers of principal components deleted.
+  - `feather`: different finetuning seeds.
+  - `pretrain_finetune`: different pretraining and finetuning seeds.
+- `experiments/common.py` contains shared runner path, config alias, metric
+  filtering, result writing, and plot helpers.
+- `run_experiments.py` is the YAML-driven runner for staged experiment runs.
+- `configs/` contains example and fast-run YAML configs.
+- `paths.py` points to the local `sim_metric_resources` directory.
 
-## Instructions
+## Setup
 
-* clone this repository
-* go to <https://zenodo.org/record/5117844> and download `sim_metric_resources.tar`
-* untar it with `tar -xvf sim_metric_resources sim_metric_resources.tar`
-* in `sim_metric/paths.py`, modify the path to `sim_metric_resources`
+Use Python `>=3.10,<3.12` and install the dependencies:
 
-### Replicating the results
+```bash
+pip install -r requirements.txt
+```
 
-For every experiment (eg `feather`, `pretrain_finetune`, `layer_exp`, or `pca_deletion`):
-* the relevant dissimilarities and accuracies differences have already been precomputed and aggregated in a dataframe `full_df`
-* make sure that `dists_path` and `full_df_path` in `compute_full_df.py`, `script.py` and `notebook.ipynb` are set to `dists.csv` and `full_df.csv`, and not `dists_self_computed.csv` and `full_df_self_computed.csv`.
-* to get the results, you can:
-    - run the notebook `notebook.ipynb`, or
-    - run `script.py` in the experiment's folder, and find the results in `results.txt`, in the same folder
-To run the scripts for all four experiments, run `experiments/script.py`.
+Download `sim_metric_resources.tar` from
+<https://zenodo.org/record/5117844>, extract it, and set `resources_path` in
+`paths.py` to the extracted `sim_metric_resources` directory.
 
-### Recomputing dissimilarities
+The resources directory is expected to contain:
 
-For every experiment, you can:
-* recompute the dissimilarities between embeddings by running `compute_dists.py` in this experiment's folder
-* use these and the accuracy scores to recompute the aggregate dataframe by running `compute_full_df.py` in this experiment's folder
-* change `dists_path` and `full_df_path` in `compute_full_df.py`, `script.py` and `notebook.ipynb` from `dists.csv` and `full_df.csv` to `dists_self_computed.csv` and `full_df_self_computed.csv`
-* run the experiments with `script.py` or `notebook.ipynb` as above.
+- `embeddings/`: representation arrays used for pairwise scoring.
+- `dists/`: precomputed dissimilarities.
+- `scores/`: accuracy/probing scores.
+- `full_dfs/`: dataframes joining metric dissimilarities with accuracy
+  differences.
+- `results/`: runner output directories, if using `run_experiments.py`.
 
-## Adding a new metric
-This repo also allows you to test a new representational similarity metric and see how it compares according to our benchmark. To add a new metric:
-* add the corresponding function at the end of `dists/scoring.py`
-* add a condition in `dists/score_pair.py`, around line 160
-* for every experiment in `experiments`, add the name of the metric to the `metrics` list in `compute_dists.py`
+## Running Experiments
+
+Prefer the YAML runner for new work:
+
+```bash
+python run_experiments.py --config configs/layer_exp_fast.yaml --device auto
+```
+
+Each enabled experiment can run up to three stages:
+
+1. `compute_dists`: writes `dists_self_computed.csv`.
+2. `compute_full_df`: writes `full_df_self_computed.csv`.
+3. `script`: writes `results.txt` and `rank_corrs_<task>.png`.
+
+Runner outputs are written under:
+
+```text
+<resources_path>/<results_base>/<experiment>/<run_id>/
+```
+
+For example, with `results_base: "results"` and
+`run_id: "fast_last_layers_run"`, the layer experiment writes to:
+
+```text
+sim_metric_resources/results/layer_exp/fast_last_layers_run/
+```
+
+The legacy direct scripts are still supported, but they may use historical
+hard-coded locations under `sim_metric_resources/dists/` and
+`sim_metric_resources/full_dfs/`. Use the YAML runner when possible to avoid
+overwriting shared resource files.
+
+## Config Conventions
+
+Configs should prefer lowercase keys:
+
+- `layers`
+- `ref_seeds`
+- `task`
+
+The code still accepts older aliases such as `LAYERS`, `REF_SEEDS`, and
+`probe_task` during the gradual cleanup.
+
+Useful configs:
+
+- `configs/layer_exp_fast.yaml`: smaller layer experiment for iteration.
+- `configs/pca_deletion_fast.yaml`: smaller PCA-deletion experiment.
+- `configs/pca_deletion.yaml`: full PCA-deletion runner config.
+- `configs/pretrain_finetune_fast.yaml`: smaller pretrain/finetune experiment.
+- `configs/pretrain_finetune.yaml`: full pretrain/finetune runner config.
+- `configs/experiment_runner.yaml`: example runner config.
+
+The primary research metrics in this repo are the RWKA family:
+`softmax_rwka`, `rbf_rwka`, and especially their AUC variants
+`softmax_rwka_auc` and `rbf_rwka_auc`. Fast-run configs should include these
+metrics by default so iteration results stay focused on the main research
+questions.
+
+## Reproducing Paper Results
+
+To use the precomputed paper data, read the relevant `full_df.csv` files from
+`sim_metric_resources/full_dfs/<experiment>/` in the notebooks or scripts. The
+notebooks remain useful for exploratory analysis and visualization.
+
+To recompute dissimilarities, use the runner with a config that enables
+`compute_dists`, then `compute_full_df`, then `script`. Recomputing can be slow
+and can produce many CSV/JSON/PNG outputs, especially for AUC sweep metrics.
+
+## Adding a New Metric
+
+Classic metrics are implemented in `dists/scoring.py` and dispatched in
+`dists/score_pair.py`.
+
+Newer alignment metrics live in `dists/metrics.py`:
+
+1. Add the metric name to `AlignmentMetrics.SUPPORTED_METRICS`.
+2. Add sweep metadata to `AlignmentMetrics.SWEEP_PARAMS`; use `"param": None`
+   for metrics without a swept hyperparameter.
+3. Add dispatch logic in `AlignmentMetrics.measure` if the metric is an alias
+   or needs special keyword arguments.
+4. Update `dists/metrics_utils.py` if the metric introduces a new swept
+   hyperparameter.
+5. Add the metric name, or `<metric>_auc` for AUC-over-sweep distance, to the
+   relevant config `metrics` lists.
+
+Most newer metrics return similarities; saved distances are generally
+`1 - score`.
+
+## Development Checks
+
+Run a syntax check:
+
+```bash
+python -m py_compile run_experiments.py dists/*.py experiments/*/*.py
+```
+
+Run import checks:
+
+```bash
+python -c "import experiments.common; import experiments.feather.script; import experiments.layer_exp.script; import experiments.pca_deletion.script; import experiments.pretrain_finetune.script"
+```
+
+If bytecode or Matplotlib caches are not writable in your environment, redirect
+them to a temporary directory:
+
+```bash
+PYTHONPYCACHEPREFIX=/private/tmp/grounded-repsim-pycache \
+MPLCONFIGDIR=/private/tmp/grounded-repsim-mpl \
+XDG_CACHE_HOME=/private/tmp/grounded-repsim-xdg \
+python -m py_compile run_experiments.py dists/*.py experiments/*/*.py
+```

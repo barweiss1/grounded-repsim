@@ -6,30 +6,39 @@ import os
 import sys
 import itertools
 
-sys.path.append(os.path.abspath("../.."))
+BASE_DIR = pathlib.Path(__file__).resolve().parents[2]
+sys.path.append(str(BASE_DIR))
 from paths import resources_path
+from experiments.common import get_run_paths
 
-sys.path.append(os.path.abspath("../../dists/"))
+sys.path.append(str(BASE_DIR / "dists"))
 from score_pair import score_pair_to_csv
 
-def run_compute_dists(cfg, results_dir, resources_path):
+def run_compute_dists(cfg, results_dir, resources_path, device=None):
     metrics = cfg.get('metrics', ["PWCCA", "mean_cca_corr", "mean_sq_cca_corr", "CSA", "CKA", "Procrustes"])
     dataset = cfg.get('dataset', 'mnli_matched_100')
     architecture = cfg.get('architecture', 'medium_finetuned')
     num_layers = cfg.get('num_layers', 8)
+    layer_indices = cfg.get('layers')
     num_seeds = cfg.get('num_seeds', 10)
     num_fseeds = cfg.get('num_fseeds', 10)
+    pre_seeds = cfg.get('pre_seeds', list(range(1, 1 + num_seeds)))
+    fine_seeds = cfg.get('fine_seeds', list(range(1, 1 + num_fseeds)))
 
-    all_model_seeds = list(itertools.product(range(1, 1 + num_seeds), range(1, 1 + num_fseeds)))
+    if layer_indices is None:
+        layer_indices = list(range(num_layers))
+    else:
+        layer_indices = [int(layer) for layer in layer_indices]
 
-    result_filename = pathlib.Path(results_dir) / 'dists_self_computed.csv'
-    if not result_filename.parent.exists():
-        result_filename.parent.mkdir(parents=True, exist_ok=True)
+    all_model_seeds = list(itertools.product(pre_seeds, fine_seeds))
+
+    result_filename = get_run_paths(results_dir)["dists"]
+    result_filename.parent.mkdir(parents=True, exist_ok=True)
     open(result_filename, 'w').close()
 
     for idx, (pseed1, fseed1) in enumerate(all_model_seeds):
         for (pseed2, fseed2) in all_model_seeds[idx:]:
-            for layer in range(num_layers):
+            for layer in layer_indices:
                 ic(pseed1, fseed1, pseed2, fseed2, layer)
                 rep1_dict = {"dataset": dataset, "architecture": architecture, "seed": pseed1, "step": fseed1, "layer": layer}
                 rep2_dict = {"dataset": dataset, "architecture": architecture, "seed": pseed2, "step": fseed2, "layer": layer}

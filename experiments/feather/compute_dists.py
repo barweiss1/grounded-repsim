@@ -1,10 +1,17 @@
 #!/usr/local/linux/anaconda3.8/bin/python
 
+import pathlib
+import sys
+
+BASE_DIR = pathlib.Path(__file__).resolve().parents[2]
+sys.path.append(str(BASE_DIR))
+sys.path.append(str(BASE_DIR / "dists"))
+
+from experiments.common import get_run_paths
+from score_pair import score_pair_to_csv
 
 # --- Refactored for wrapper ---
-def run_compute_dists(cfg, results_dir, resources_path):
-    from score_pair import score_pair_to_csv
-    import pathlib
+def run_compute_dists(cfg, results_dir, resources_path, device=None):
     metrics = cfg.get('metrics')
     dataset = cfg.get('dataset')
     architecture = cfg.get('architecture')
@@ -12,7 +19,8 @@ def run_compute_dists(cfg, results_dir, resources_path):
     num_layers = cfg.get('num_layers')
     num_seeds = cfg.get('num_seeds')
 
-    result_filename = pathlib.Path(results_dir) / 'dists_self_computed.csv'
+    result_filename = get_run_paths(results_dir)["dists"]
+    result_filename.parent.mkdir(parents=True, exist_ok=True)
     open(result_filename, 'w').close()
 
     for seed1 in range(num_seeds):
@@ -24,7 +32,6 @@ def run_compute_dists(cfg, results_dir, resources_path):
 
 # --- Legacy CLI fallback ---
 if __name__ == "__main__":
-    import pathlib
     from paths import resources_path
     cfg = {
         'metrics': ["PWCCA", "mean_cca_corr", "mean_sq_cca_corr", "CSA", "CKA", "Procrustes", 'cka_rbf', 'cka_rbf_quantile', 'cka_rbf_auc', 'mutual_knn', 'mutual_knn_auc', 'cknna'],

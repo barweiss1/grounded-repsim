@@ -7,8 +7,10 @@ import pandas as pd
 import sys
 import os
 
-sys.path.append(os.path.abspath("../.."))
+BASE_DIR = pathlib.Path(__file__).resolve().parents[2]
+sys.path.append(str(BASE_DIR))
 from paths import resources_path
+from experiments.common import get_run_paths, resolve_resource
 
 # paths
 scores_path = resources_path / pathlib.Path("scores/layer_exp/scores.pkl")
@@ -54,11 +56,11 @@ def get_full_df(scores_path, dists_path, full_df_path):
     print("saved")
     return full_df
 
-def run_compute_full_df(cfg, results_dir, resources_path):
-    import pathlib
-    scores_path = resources_path / pathlib.Path(cfg.get('scores_path', 'scores/layer_exp/scores.pkl'))
-    dists_path = pathlib.Path(results_dir) / 'dists_self_computed.csv'
-    full_df_path = pathlib.Path(results_dir) / 'full_df_self_computed.csv'
+def run_compute_full_df(cfg, results_dir, resources_path, device=None):
+    paths = get_run_paths(results_dir)
+    scores_path = resolve_resource(resources_path, cfg.get('scores_path', 'scores/layer_exp/scores.pkl'))
+    dists_path = paths["dists"]
+    full_df_path = paths["full_df"]
     get_full_df(scores_path, dists_path, full_df_path)
 
 if __name__ == "__main__":

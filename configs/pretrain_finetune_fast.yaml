@@ -1,0 +1,36 @@
+# Fast pretrain_finetune run for iteration.
+# Uses a small seed/layer subset and writes under sim_metric_resources/results/.
+run_id: "pretrain_finetune_fast_run"
+results_base: "results"
+
+experiments:
+  feather:
+    enabled: false
+
+  layer_exp:
+    enabled: false
+
+  pca_deletion:
+    enabled: false
+
+  pretrain_finetune:
+    enabled: true
+
+    compute_dists:
+      dataset: "mnli_matched_100"
+      architecture: "medium_finetuned"
+      num_layers: 8
+      layers: [6, 7]
+      pre_seeds: [1, 2]
+      fine_seeds: [1, 2]
+      metrics: ["softmax_rwka", "softmax_rwka_auc", "rbf_rwka", "rbf_rwka_auc", "PWCCA", "CKA", "Procrustes", "cka_rbf", "mutual_knn", "cknna"]
+
+    compute_full_df:
+      scores_path: "scores/pretrain_finetune/scores.pkl"
+
+    script:
+      scores_path: "scores/pretrain_finetune/scores.pkl"
+      tasks: ["STRESS_ANTONYMY", "STRESS_NUMERICAL"]
+      num_layers: 8
+      layers: [6, 7]
+      metrics: ["softmax_rwka", "softmax_rwka_auc", "rbf_rwka", "rbf_rwka_auc", "PWCCA", "CKA", "Procrustes", "cka_rbf", "mutual_knn", "cknna"]

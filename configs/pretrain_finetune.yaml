@@ -1,0 +1,34 @@
+# Full pretrain_finetune run.
+# This can be expensive: 10 pretraining seeds x 10 finetuning seeds x 8 layers.
+run_id: "pretrain_finetune_run_001"
+results_base: "results"
+
+experiments:
+  feather:
+    enabled: false
+
+  layer_exp:
+    enabled: false
+
+  pca_deletion:
+    enabled: false
+
+  pretrain_finetune:
+    enabled: true
+
+    compute_dists:
+      dataset: "mnli_matched_100"
+      architecture: "medium_finetuned"
+      num_layers: 8
+      num_seeds: 10
+      num_fseeds: 10
+      metrics: ["softmax_rwka", "softmax_rwka_auc", "rbf_rwka", "rbf_rwka_auc", "PWCCA", "mean_cca_corr", "mean_sq_cca_corr", "CSA", "CKA", "Procrustes", "cka_rbf", "cka_rbf_quantile", "cka_rbf_auc", "mutual_knn", "mutual_knn_auc", "cknna"]
+
+    compute_full_df:
+      scores_path: "scores/pretrain_finetune/scores.pkl"
+
+    script:
+      scores_path: "scores/pretrain_finetune/scores.pkl"
+      tasks: ["STRESS_ANTONYMY", "STRESS_NUMERICAL"]
+      num_layers: 8
+      metrics: ["softmax_rwka", "softmax_rwka_auc", "rbf_rwka", "rbf_rwka_auc", "PWCCA", "CKA", "Procrustes", "cka_rbf_auc", "mutual_knn_auc", "cknna"]

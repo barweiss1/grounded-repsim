@@ -26,9 +26,9 @@ experiments:
     script:
       scores_path: "scores/layer_exp/scores.pkl"
       task: "SST-2"
-      LAYERS: [10, 11]           # Fast: use last layers
+      layers: [10, 11]           # Fast: use last layers
       num_layers: 12
-      REF_SEEDS: [1, 2]          # Fast: only 2 ref seeds
+      ref_seeds: [1, 2]          # Fast: only 2 ref seeds
       metrics: ["softmax_rwka", "softmax_rwka_auc", "rbf_rwka", "rbf_rwka_auc", "PWCCA", "CKA", "Procrustes", "cka_rbf_auc", "mutual_knn_auc"]
 
   pca_deletion:

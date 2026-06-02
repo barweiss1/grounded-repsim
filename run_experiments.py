@@ -5,7 +5,6 @@ import json
 import pathlib
 from datetime import datetime
 from importlib import import_module
-import inspect
 
 try:
     import torch
@@ -39,11 +38,7 @@ def run_experiment(exp_name, exp_cfg, results_base, run_id, device=None):
         mod = import_module(f'experiments.{exp_name}.compute_dists')
         if hasattr(mod, 'run_compute_dists'):
             func = getattr(mod, 'run_compute_dists')
-            sig = inspect.signature(func)
-            if 'device' in sig.parameters:
-                func(exp_cfg['compute_dists'], exp_dir, resources_path, device=device)
-            else:
-                func(exp_cfg['compute_dists'], exp_dir, resources_path)
+            func(exp_cfg['compute_dists'], exp_dir, resources_path, device=device)
         else:
             print(f"[WARN] {exp_name}/compute_dists.py has no run_compute_dists function.")
 
@@ -52,11 +47,7 @@ def run_experiment(exp_name, exp_cfg, results_base, run_id, device=None):
         mod = import_module(f'experiments.{exp_name}.compute_full_df')
         if hasattr(mod, 'run_compute_full_df'):
             func = getattr(mod, 'run_compute_full_df')
-            sig = inspect.signature(func)
-            if 'device' in sig.parameters:
-                func(exp_cfg['compute_full_df'], exp_dir, resources_path, device=device)
-            else:
-                func(exp_cfg['compute_full_df'], exp_dir, resources_path)
+            func(exp_cfg['compute_full_df'], exp_dir, resources_path, device=device)
         else:
             print(f"[WARN] {exp_name}/compute_full_df.py has no run_compute_full_df function.")
 
@@ -65,11 +56,7 @@ def run_experiment(exp_name, exp_cfg, results_base, run_id, device=None):
         mod = import_module(f'experiments.{exp_name}.script')
         if hasattr(mod, 'run_experiment_script'):
             func = getattr(mod, 'run_experiment_script')
-            sig = inspect.signature(func)
-            if 'device' in sig.parameters:
-                func(exp_cfg['script'], exp_dir, resources_path, device=device)
-            else:
-                func(exp_cfg['script'], exp_dir, resources_path)
+            func(exp_cfg['script'], exp_dir, resources_path, device=device)
         else:
             print(f"[WARN] {exp_name}/script.py has no run_experiment_script function.")
 
@@ -102,7 +89,7 @@ def main():
             print("[WARN] PyTorch not available; defaulting device to 'cpu'")
             resolved_device = 'cpu'
     run_id = cfg.get('run_id') or datetime.now().strftime('%Y%m%d_%H%M%S')
-    results_base = os.path.join(resources_path, cfg.get('results_base', 'sim_metric_resources/results'))
+    results_base = os.path.join(resources_path, cfg.get('results_base', 'results'))
 
     for exp_name, exp_cfg in cfg['experiments'].items():
         if exp_cfg.get('enabled', False):

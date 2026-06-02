@@ -24,4 +24,4 @@ experiments:
     enabled: false
   pretrain_finetune:
     enabled: false
-results_base: "sim_metric_resources/results"
+results_base: "results"

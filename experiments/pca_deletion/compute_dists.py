@@ -8,11 +8,12 @@ import sys
 BASE_DIR = pathlib.Path(__file__).resolve().parents[2]
 sys.path.append(str(BASE_DIR))
 from paths import resources_path
+from experiments.common import get_run_paths
 
 sys.path.append(str(BASE_DIR / "dists"))
 from score_pair import score_local_pair, load_embedding
 
-def run_compute_dists(cfg, results_dir, resources_path):
+def run_compute_dists(cfg, results_dir, resources_path, device=None):
     metrics = cfg.get('metrics', ["PWCCA", "mean_cca_corr", "mean_sq_cca_corr", "CSA", "CKA", "Procrustes"])
     dataset = cfg.get('dataset', 'mnli_matched_100')
     architecture = cfg.get('architecture', 'base')
@@ -23,9 +24,8 @@ def run_compute_dists(cfg, results_dir, resources_path):
     dims_deleted = np.array(cfg.get('dims_deleted', [0,100,200,300,400,500,600,650,700,725,750,758,763,767]))
     TOTAL_DIM = cfg.get('total_dim', 768)
 
-    result_filename = pathlib.Path(results_dir) / 'dists_self_computed.csv'
-    if not result_filename.parent.exists():
-        result_filename.parent.mkdir(parents=True, exist_ok=True)
+    result_filename = get_run_paths(results_dir)["dists"]
+    result_filename.parent.mkdir(parents=True, exist_ok=True)
     open(result_filename, 'w').close()
 
     if layer_indices is None:

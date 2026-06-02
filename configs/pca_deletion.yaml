@@ -37,11 +37,14 @@ experiments:
 
     compute_full_df:
       scores_path: "scores/pca_deletion/scores.pkl"
+      task: "SST-2"
+      ref_seeds: [1, 2, 3, 4, 5, 6, 7]
+      layers: [7, 8, 9, 10, 11]
     script:
       scores_path: "scores/pca_deletion/scores.pkl"
-      probe_task: "SST-2"
-      REF_SEEDS: [1, 2, 3, 4, 5, 6, 7]
-      LAYERS: [7, 8, 9, 10, 11]
+      task: "SST-2"
+      ref_seeds: [1, 2, 3, 4, 5, 6, 7]
+      layers: [7, 8, 9, 10, 11]
       num_layers: 12
       metrics: ["softmax_rwka", "softmax_rwka_auc", "PWCCA", "CKA", "Procrustes", "cka_rbf_auc", "mutual_knn_auc"]
       # same sweep options available to script-level AUC computations

@@ -36,12 +36,15 @@ experiments:
 
     compute_full_df:
       scores_path: "scores/pca_deletion/scores.pkl"
+      task: "SST-2"
+      ref_seeds: [1, 2]          # Fast: only 2 ref seeds
+      layers: [10, 11]           # Fast: use last layers
 
     script:
       scores_path: "scores/pca_deletion/scores.pkl"
-      probe_task: "SST-2"
-      REF_SEEDS: [1, 2]          # Fast: only 2 ref seeds
-      LAYERS: [10, 11]           # Fast: use last layers
+      task: "SST-2"
+      ref_seeds: [1, 2]          # Fast: only 2 ref seeds
+      layers: [10, 11]           # Fast: use last layers
       num_layers: 12
       metrics: ["rbf_rwka", "rbf_rwka_auc", "softmax_rwka", "softmax_rwka_auc", "PWCCA", "CKA", "Procrustes", "cka_rbf_auc", "mutual_knn_auc"]
       metric_param_sweep_len: 30

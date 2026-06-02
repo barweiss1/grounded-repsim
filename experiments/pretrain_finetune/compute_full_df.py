@@ -9,6 +9,7 @@ import os
 
 sys.path.append(os.path.abspath("../.."))
 from paths import resources_path
+from experiments.common import get_run_paths, resolve_resource
 
 # new paths
 scores_path_default = resources_path / pathlib.Path("scores/pretrain_finetune/scores.pkl")
@@ -83,26 +84,17 @@ def get_acc_diff(acc_dict, stress_test, pre_seed1, pre_seed2, fine_seed1, fine_s
 
 def add_acc_diff_cols(dists_df, acc_dict, guid_set):
     for stress_test in guid_set:
-        new_column = []
-        # checked manually that this ordering of the seeds is compatible with dists_df
-        for pre_seed1 in range(1, 11):
-            for fine_seed1 in range(1, 11):
-                for pre_seed2 in range(pre_seed1, 11):
-                    for fine_seed2 in range(1, 11):
-                        if pre_seed2 == pre_seed1 and fine_seed2 < fine_seed1:
-                            continue
-                        else:
-                            new_column += num_layers * [
-                                get_acc_diff(
-                                    acc_dict,
-                                    stress_test,
-                                    pre_seed1 - 1,
-                                    pre_seed2 - 1,
-                                    fine_seed1 - 1,
-                                    fine_seed2 - 1,
-                                )
-                            ]
-        dists_df[f"{stress_test}_diff"] = np.array(new_column)
+        dists_df[f"{stress_test}_diff"] = dists_df.apply(
+            lambda row: get_acc_diff(
+                acc_dict,
+                stress_test,
+                int(row["pre_seed1"]) - 1,
+                int(row["pre_seed2"]) - 1,
+                int(row["fine_seed1"]) - 1,
+                int(row["fine_seed2"]) - 1,
+            ),
+            axis=1,
+        )
     return dists_df
 
 
@@ -128,9 +120,9 @@ def get_full_df(scores_path, dists_path, full_df_path):
 
     return full_df
 
-def run_compute_full_df(cfg, results_dir, resources_path):
-    import pathlib
-    scores_path = resources_path / pathlib.Path(cfg.get('scores_path', 'scores/pretrain_finetune/scores.pkl'))
-    dists_path = pathlib.Path(results_dir) / 'dists_self_computed.csv'
-    full_df_path = pathlib.Path(results_dir) / 'full_df_self_computed.csv'
+def run_compute_full_df(cfg, results_dir, resources_path, device=None):
+    paths = get_run_paths(results_dir)
+    scores_path = resolve_resource(resources_path, cfg.get('scores_path', 'scores/pretrain_finetune/scores.pkl'))
+    dists_path = paths["dists"]
+    full_df_path = paths["full_df"]
     get_full_df(scores_path, dists_path, full_df_path)

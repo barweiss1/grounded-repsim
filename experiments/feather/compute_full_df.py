@@ -6,6 +6,10 @@ import pathlib
 import os
 import sys
 
+BASE_DIR = pathlib.Path(__file__).resolve().parents[2]
+sys.path.append(str(BASE_DIR))
+from experiments.common import get_run_paths, resolve_resource
+
 def get_acc_diff(row, scores_df, task_list):
     score_row1 = scores_df.iloc[row["seed1"]]
     score_row2 = scores_df.iloc[row["seed2"]]
@@ -49,12 +53,12 @@ def get_full_df(scores_path, dists_path, full_df_path):
     return full_df
 
 # --- Refactored for wrapper ---
-def run_compute_full_df(cfg, results_dir, resources_path):
-    import pathlib
+def run_compute_full_df(cfg, results_dir, resources_path, device=None):
     # Default paths
-    scores_path = resources_path / pathlib.Path("scores/feather/scores.csv")
-    dists_path = pathlib.Path(results_dir) / 'dists_self_computed.csv'
-    full_df_path = pathlib.Path(results_dir) / 'full_df_self_computed.csv'
+    paths = get_run_paths(results_dir)
+    scores_path = resolve_resource(resources_path, cfg.get('scores_path', 'scores/feather/scores.csv'))
+    dists_path = paths["dists"]
+    full_df_path = paths["full_df"]
     get_full_df(scores_path, dists_path, full_df_path)
 
 # --- Legacy CLI fallback ---

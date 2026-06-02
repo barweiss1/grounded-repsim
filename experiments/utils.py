@@ -1,3 +1,6 @@
+import matplotlib
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from scipy.stats import kendalltau, spearmanr, percentileofscore
 
