@@ -41,6 +41,11 @@ machines, set an override:
 export SIM_METRIC_RESOURCES=/path/to/sim_metric_resources
 ```
 
+The runner expects precomputed `rep.npy` files under
+`$SIM_METRIC_RESOURCES/embeddings/...`. It does not compute BERT embeddings on
+demand; if an embedding is missing, fix the resource path or download the full
+resources archive.
+
 The resources directory is expected to contain:
 
 - `embeddings/`: representation arrays used for pairwise scoring.

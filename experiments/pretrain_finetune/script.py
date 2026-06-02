@@ -1,6 +1,7 @@
 import pathlib
 import pandas as pd
 import sys
+from tqdm import tqdm
 
 BASE_DIR = pathlib.Path(__file__).resolve().parents[1]
 sys.path.append(str(BASE_DIR))
@@ -63,7 +64,7 @@ def run_experiment_script(cfg, results_dir, resources_path, device=None):
     tasks = cfg.get('tasks', ["STRESS_ANTONYMY", "STRESS_NUMERICAL"])
     metrics_filtered = filter_available_metrics(metrics, full_df)
 
-    for idx, task in enumerate(tasks):
+    for idx, task in enumerate(tqdm(tasks, desc="pretrain_finetune analysis tasks", unit="task")):
         rho, rho_p, tau, tau_p, bad_fracs = aggregate_rank_corrs(
             full_df, task, num_layers, metrics_filtered, ftvft_sub_df, list_layers=layers
         )

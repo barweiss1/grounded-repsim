@@ -2,6 +2,7 @@ import pathlib
 import sys
 
 import pandas as pd
+from tqdm import tqdm
 
 BASE_DIR = pathlib.Path(__file__).resolve().parents[1]
 REPO_DIR = pathlib.Path(__file__).resolve().parents[2]
@@ -54,9 +55,11 @@ def run_experiment_script(cfg, results_dir, resources_path, device=None):
     num_layers = cfg.get('num_layers', 12)
     metrics_filtered = filter_available_metrics(metrics, full_df)
 
-    rho, rho_p, tau, tau_p, bad_fracs = aggregate_rank_corrs(
-        full_df, task, num_layers, metrics_filtered, feather_sub_df
-    )
+    with tqdm(total=1, desc="feather analysis tasks", unit="task") as pbar:
+        rho, rho_p, tau, tau_p, bad_fracs = aggregate_rank_corrs(
+            full_df, task, num_layers, metrics_filtered, feather_sub_df
+        )
+        pbar.update(1)
 
     write_rank_corr_results(results_path, metrics_filtered, rho, rho_p, tau, tau_p, bad_fracs)
     save_rank_corr_plot(results_dir, rho, rho_p, tau, tau_p, metrics_filtered, task)

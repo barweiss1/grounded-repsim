@@ -4,6 +4,7 @@
 import pandas as pd
 import pathlib
 import sys
+from tqdm import tqdm
 
 BASE_DIR = pathlib.Path(__file__).resolve().parents[2]
 sys.path.append(str(BASE_DIR))
@@ -41,8 +42,7 @@ def get_full_df(scores_path, dists_path, full_df_path):
     dists_df = pd.read_csv(dists_path)
     print("got dists_df")
     print("getting full_df, will take a while")
-    from tqdm import tqdm
-    tqdm.pandas()
+    tqdm.pandas(desc="feather score diffs")
     full_df = dists_df.progress_apply(
         lambda row: get_acc_diff(row, scores_df, task_list), axis=1
     )

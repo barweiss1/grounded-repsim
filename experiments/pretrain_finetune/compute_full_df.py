@@ -5,6 +5,7 @@ import pickle as pkl
 import pathlib
 import pandas as pd
 import sys
+from tqdm import tqdm
 
 BASE_DIR = pathlib.Path(__file__).resolve().parents[2]
 sys.path.append(str(BASE_DIR))
@@ -79,8 +80,9 @@ def get_acc_diff(acc_dict, stress_test, pre_seed1, pre_seed2, fine_seed1, fine_s
 
 
 def add_acc_diff_cols(dists_df, acc_dict, guid_set):
-    for stress_test in guid_set:
-        dists_df[f"{stress_test}_diff"] = dists_df.apply(
+    for stress_test in tqdm(sorted(guid_set), desc="pretrain_finetune score tasks", unit="task"):
+        tqdm.pandas(desc=f"{stress_test} score diffs")
+        dists_df[f"{stress_test}_diff"] = dists_df.progress_apply(
             lambda row: get_acc_diff(
                 acc_dict,
                 stress_test,

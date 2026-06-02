@@ -3,6 +3,7 @@
 import numpy as np
 import pathlib
 import sys
+from tqdm import tqdm
 
 BASE_DIR = pathlib.Path(__file__).resolve().parents[2]
 sys.path.append(str(BASE_DIR))
@@ -31,60 +32,57 @@ def run_compute_dists(cfg, results_dir, resources_path, device=None):
     else:
         layer_indices = [int(layer) for layer in layer_indices]
         
-    # add progress bar
-    from tqdm import tqdm
-    total_iterations = num_seeds * num_seeds * len(layer_indices)
-    pbar = tqdm(total=total_iterations)
+    total_iterations = num_seeds * num_seeds * len(layer_indices) * len(dims_deleted)
+    with tqdm(total=total_iterations, desc="pca_deletion distance pairs", unit="pair") as pbar:
+        for seed1 in range(1, num_seeds + 1):
+            for seed2 in range(1, num_seeds + 1):
+                for layer in layer_indices:
+                    rep1 = load_embedding(dataset, architecture, seed1, step, layer)
+                    rep1 = rep1 - rep1.mean(axis=1, keepdims=True)
 
-    for seed1 in range(1, num_seeds + 1):
-        for seed2 in range(1, num_seeds + 1):
-            for layer in layer_indices:
-                pbar.update(1)
-                rep1 = load_embedding(dataset, architecture, seed1, step, layer)
-                rep1 = rep1 - rep1.mean(axis=1, keepdims=True)
+                    rep2 = load_embedding(dataset, architecture, seed2, step, layer)
+                    rep2 = rep2 - rep2.mean(axis=1, keepdims=True)
+                    u, s, vh = np.linalg.svd(rep2, full_matrices=False)
 
-                rep2 = load_embedding(dataset, architecture, seed2, step, layer)
-                rep2 = rep2 - rep2.mean(axis=1, keepdims=True)
-                u, s, vh = np.linalg.svd(rep2, full_matrices=False)
+                    for dim in dims_deleted:
+                        dims_kept = TOTAL_DIM - dim
+                        # Keep representation in the original feature space after deleting
+                        # high-rank principal components so metrics see matching shapes.
+                        basis = u[:, :dims_kept]
+                        deleted_rep = basis @ (basis.T @ rep2)
+                        deleted_rep = deleted_rep * TOTAL_DIM / dims_kept
 
-                for dim in dims_deleted:
-                    dims_kept = TOTAL_DIM - dim
-                    # Keep representation in the original feature space after deleting
-                    # high-rank principal components so metrics see matching shapes.
-                    basis = u[:, :dims_kept]
-                    deleted_rep = basis @ (basis.T @ rep2)
-                    deleted_rep = deleted_rep * TOTAL_DIM / dims_kept
+                        results = {
+                            "dataset1": dataset,
+                            "architecture1": architecture,
+                            "seed1": seed1,
+                            "step1": step,
+                            "layer1": layer,
+                            "dataset2": dataset,
+                            "architecture2": architecture,
+                            "seed2": seed2,
+                            "step2": step,
+                            "layer2": layer,
+                            "dims_deleted": int(dim),
+                            "dims_kept": int(dims_kept),
+                        }
+                        # build sim params from cfg to allow configuring adaptive sweeps
+                        sim_params = {
+                            'metric_param_sweep_len': cfg.get('metric_param_sweep_len', 30),
+                            'auc_integration_method': cfg.get('auc_integration_method', 'average'),
+                            'auc_logscale': cfg.get('auc_logscale', True),
+                            'auc_adaptive_rbf_sigma': cfg.get('auc_adaptive_rbf_sigma', False),
+                            'auc_adaptive_quantiles': tuple(cfg.get('auc_adaptive_quantiles', (0.01, 0.8))),
+                            'auc_adaptive_temperature': cfg.get('auc_adaptive_temperature', False),
+                            'auc_adaptive_temperature_quantiles': tuple(cfg.get('auc_adaptive_temperature_quantiles', (0.01, 0.8))),
+                        }
 
-                    results = {
-                        "dataset1": dataset,
-                        "architecture1": architecture,
-                        "seed1": seed1,
-                        "step1": step,
-                        "layer1": layer,
-                        "dataset2": dataset,
-                        "architecture2": architecture,
-                        "seed2": seed2,
-                        "step2": step,
-                        "layer2": layer,
-                        "dims_deleted": int(dim),
-                        "dims_kept": int(dims_kept),
-                    }
-                    # build sim params from cfg to allow configuring adaptive sweeps
-                    sim_params = {
-                        'metric_param_sweep_len': cfg.get('metric_param_sweep_len', 30),
-                        'auc_integration_method': cfg.get('auc_integration_method', 'average'),
-                        'auc_logscale': cfg.get('auc_logscale', True),
-                        'auc_adaptive_rbf_sigma': cfg.get('auc_adaptive_rbf_sigma', False),
-                        'auc_adaptive_quantiles': tuple(cfg.get('auc_adaptive_quantiles', (0.01, 0.8))),
-                        'auc_adaptive_temperature': cfg.get('auc_adaptive_temperature', False),
-                        'auc_adaptive_temperature_quantiles': tuple(cfg.get('auc_adaptive_temperature_quantiles', (0.01, 0.8))),
-                    }
-
-                    score_local_pair(
-                        rep1=rep1,
-                        rep2=deleted_rep,
-                        metadata=results,
-                        metrics=metrics,
-                        filename=result_filename,
-                        sim_params=sim_params,
-                    )
+                        score_local_pair(
+                            rep1=rep1,
+                            rep2=deleted_rep,
+                            metadata=results,
+                            metrics=metrics,
+                            filename=result_filename,
+                            sim_params=sim_params,
+                        )
+                        pbar.update(1)

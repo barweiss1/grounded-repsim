@@ -5,6 +5,7 @@ import pandas as pd
 import pathlib
 import pickle as pkl
 import sys
+from tqdm import tqdm
 
 BASE_DIR = pathlib.Path(__file__).resolve().parents[2]
 sys.path.append(str(BASE_DIR))
@@ -37,8 +38,15 @@ def get_full_df(scores_path, dists_path, full_df_path, ref_seeds, layers, task):
     print("filtered full_df layers and seeds")
     print("adding probing scores to get full_df")
     data_dict = pkl.load(open(scores_path, "rb"))
-    f = lambda row: get_acc_diff(data_dict, row, task)
-    full_df[f"{task}_diff"] = full_df.apply(f, axis=1)
+    task_diff_list = []
+    for _, row in tqdm(
+        full_df.iterrows(),
+        total=len(full_df),
+        desc=f"pca_deletion {task} score diffs",
+        unit="row",
+    ):
+        task_diff_list.append(get_acc_diff(data_dict, row, task))
+    full_df[f"{task}_diff"] = np.array(task_diff_list)
     print("got full_df, saving:")
     full_df.to_csv(full_df_path)
     print("saved")

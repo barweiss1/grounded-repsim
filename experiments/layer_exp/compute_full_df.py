@@ -5,6 +5,7 @@ import numpy as np
 import pathlib
 import pandas as pd
 import sys
+from tqdm import tqdm
 
 BASE_DIR = pathlib.Path(__file__).resolve().parents[2]
 sys.path.append(str(BASE_DIR))
@@ -35,7 +36,12 @@ def get_full_df(scores_path, dists_path, full_df_path):
     data_dict = pkl.load(open(scores_path, "rb"))
     for task in task_list:
         task_diff_list = []
-        for _, row in dists_df.iterrows():
+        for _, row in tqdm(
+            dists_df.iterrows(),
+            total=len(dists_df),
+            desc=f"layer_exp {task} score diffs",
+            unit="row",
+        ):
             acc1 = get_probing_accuracy(data_dict, task, row["seed1"], row["layer1"])
             acc2 = get_probing_accuracy(data_dict, task, row["seed2"], row["layer2"])
             task_diff_list.append(np.abs(acc1 - acc2))

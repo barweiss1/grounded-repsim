@@ -3,6 +3,7 @@ import pandas as pd
 import pickle as pkl
 import numpy as np
 import sys
+from tqdm import tqdm
 
 BASE_DIR = pathlib.Path(__file__).resolve().parents[1]
 sys.path.append(str(BASE_DIR))
@@ -54,9 +55,14 @@ def run_experiment_script(cfg, results_dir, resources_path, device=None):
     layers = cfg.get('layers', [7,8,9,10,11])
     metrics_filtered = filter_available_metrics(metrics, full_df)
 
-    rho, rho_p, tau, tau_p, bad_fracs = aggregate_rank_corrs(
-        full_df, task, num_layers, metrics_filtered, pca_sub_df, list_layers=layers
-    )
+    with tqdm(total=len(layers), desc="pca_deletion analysis layers", unit="layer") as pbar:
+        def progress_pca_sub_df(df, task_name, ref_depth):
+            pbar.update(1)
+            return pca_sub_df(df, task_name, ref_depth)
+
+        rho, rho_p, tau, tau_p, bad_fracs = aggregate_rank_corrs(
+            full_df, task, num_layers, metrics_filtered, progress_pca_sub_df, list_layers=layers
+        )
 
     write_rank_corr_results(results_path, metrics_filtered, rho, rho_p, tau, tau_p, bad_fracs)
     save_rank_corr_plot(results_dir, rho, rho_p, tau, tau_p, metrics_filtered, task)
