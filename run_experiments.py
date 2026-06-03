@@ -36,6 +36,39 @@ def save_json(obj, path):
     with open(path, 'w') as f:
         json.dump(obj, f, indent=2)
 
+def resolve_enabled_stages(exp_name, exp_cfg, stages):
+    requested_stage_names = exp_cfg.get("run_stages")
+    available_stage_names = {stage[0] for stage in stages}
+
+    if requested_stage_names is None:
+        return [stage for stage in stages if exp_cfg.get(stage[0], None)]
+
+    if not isinstance(requested_stage_names, list):
+        raise ValueError(f"{exp_name}.run_stages must be a list of stage names.")
+
+    requested_stage_names = set(requested_stage_names)
+    unknown_stage_names = requested_stage_names - available_stage_names
+    if unknown_stage_names:
+        valid_names = ", ".join(stage[0] for stage in stages)
+        unknown_names = ", ".join(sorted(unknown_stage_names))
+        raise ValueError(
+            f"{exp_name}.run_stages contains unknown stages: {unknown_names}. "
+            f"Valid stages are: {valid_names}."
+        )
+
+    missing_cfg_names = [
+        stage_name
+        for stage_name in requested_stage_names
+        if not exp_cfg.get(stage_name, None)
+    ]
+    if missing_cfg_names:
+        missing_names = ", ".join(sorted(missing_cfg_names))
+        raise ValueError(
+            f"{exp_name}.run_stages requested stages without config: {missing_names}."
+        )
+
+    return [stage for stage in stages if stage[0] in requested_stage_names]
+
 def run_experiment(exp_name, exp_cfg, results_base, run_id, device=None):
     exp_dir = os.path.join(results_base, exp_name, run_id)
     ensure_dir(exp_dir)
@@ -49,7 +82,7 @@ def run_experiment(exp_name, exp_cfg, results_base, run_id, device=None):
         ("script", f"experiments.{exp_name}.script", "run_experiment_script"),
     ]
 
-    enabled_stages = [stage for stage in stages if exp_cfg.get(stage[0], None)]
+    enabled_stages = resolve_enabled_stages(exp_name, exp_cfg, stages)
     for stage_name, module_name, function_name in tqdm(
         enabled_stages,
         desc=f"{exp_name} stages",

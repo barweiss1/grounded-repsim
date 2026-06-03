@@ -3,6 +3,7 @@ run_id: "test_run_001"
 experiments:
   feather:
     enabled: true
+    run_stages: ["compute_dists", "compute_full_df", "script"]
     compute_dists:
       metrics: ["PWCCA", "mean_cca_corr", "mean_sq_cca_corr", "CSA", "CKA", "Procrustes", "cka_rbf", "cka_rbf_quantile", "cka_rbf_auc", "mutual_knn", "mutual_knn_auc", "cknna"]
       dataset: "mnli_matched_100"

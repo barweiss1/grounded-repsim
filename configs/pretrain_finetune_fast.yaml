@@ -15,6 +15,7 @@ experiments:
 
   pretrain_finetune:
     enabled: true
+    run_stages: ["compute_full_df", "script"]
 
     compute_dists:
       dataset: "mnli_matched_100"

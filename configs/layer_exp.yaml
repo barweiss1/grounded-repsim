@@ -1,7 +1,7 @@
 # Fast layer_exp run: fewer seeds and layers for quick iteration
 # Leave run_id unset to auto-generate a unique results directory
 # (avoids overwriting AUC sweep files across runs).
-run_id: "fast_last_layers_run"
+run_id: "last_layers_run_001"
 results_base: "results"
 
 experiments:
@@ -15,10 +15,10 @@ experiments:
     compute_dists:
       dataset: "mnli_matched_100"
       architecture: "base"
-      step: 2000000
-      num_layers: 12               # Fast: only first 4 layers
-      layers: [8, 9, 10, 11]     # Fast: use last 4 layers instead of first 4
-      num_seeds: 3               # Fast: only 3 seeds instead of 10
+      step: 2000000       
+      # layers: [8, 9, 10, 11]                
+      num_layers: 12
+      num_seeds: 10
       metrics: ["softmax_rwka", "softmax_rwka_auc", "rbf_rwka", "rbf_rwka_auc", "PWCCA", "mean_cca_corr", "mean_sq_cca_corr", "CSA", "CKA", "Procrustes", "cka_rbf", "cka_rbf_auc", "mutual_knn", "mutual_knn_auc", "cknna", "cknna_auc"]
 
     compute_full_df:

@@ -76,6 +76,25 @@ Each enabled experiment can run up to three stages:
 2. `compute_full_df`: writes `full_df_self_computed.csv`.
 3. `script`: writes `results.txt` and `rank_corrs_<task>.png`.
 
+By default, the runner executes every configured stage in that order. To reuse
+existing distances and run only later stages, add `run_stages` to the experiment
+config:
+
+```yaml
+pretrain_finetune:
+  enabled: true
+  run_stages: ["compute_full_df", "script"]
+  compute_dists:
+    ...
+  compute_full_df:
+    ...
+  script:
+    ...
+```
+
+Requested stages must still have config blocks, and stage execution always
+follows the canonical order: `compute_dists`, `compute_full_df`, then `script`.
+
 Runner outputs are written under:
 
 ```text
