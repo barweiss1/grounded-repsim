@@ -22,7 +22,7 @@ experiments:
       architecture: "medium_finetuned"
       num_layers: 8
       layers: [4, 5, 6, 7]     # Fast: use last 4 layers instead of first 4
-      pre_seeds: [0, 1, 2]
+      pre_seeds: [1, 2, 3]
       fine_seeds: [1, 2, 3, 4]
       metrics: ["softmax_rwka", "softmax_rwka_auc", "rbf_rwka", "rbf_rwka_auc", "PWCCA", "CKA", "Procrustes", "cka_rbf", "mutual_knn", "cknna"]
       # sweep and AUC options
