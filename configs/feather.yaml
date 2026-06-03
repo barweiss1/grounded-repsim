@@ -1,0 +1,35 @@
+# Full feather run.
+# This can be expensive: 100 seeds x 12 layers, with upper-triangular seed pairs.
+run_id: "feather_run_001"
+results_base: "results"
+
+experiments:
+  feather:
+    enabled: true
+    run_stages: ["compute_dists", "compute_full_df", "script"]
+
+    compute_dists:
+      dataset: "mnli_matched_100"
+      architecture: "feather"
+      step: 0
+      num_layers: 12
+      num_seeds: 100
+      metrics: ["softmax_rwka", "softmax_rwka_auc", "rbf_rwka", "rbf_rwka_auc", "PWCCA", "mean_cca_corr", "mean_sq_cca_corr", "CSA", "CKA", "Procrustes", "cka_rbf", "cka_rbf_auc", "mutual_knn", "mutual_knn_auc", "cknna", "cknna_auc"]
+
+    compute_full_df:
+      scores_path: "scores/feather/scores.csv"
+
+    script:
+      scores_path: "scores/feather/scores.csv"
+      tasks: ["mnli_dev_acc", "lex_ent", "lex_nonent", "sub_ent", "const_ent", "sub_nonent", "overall_accuracy"]
+      num_layers: 12
+      metrics: ["softmax_rwka", "softmax_rwka_auc", "rbf_rwka", "rbf_rwka_auc", "PWCCA", "CKA", "Procrustes", "cka_rbf_auc", "mutual_knn_auc", "cknna_auc"]
+
+  layer_exp:
+    enabled: false
+
+  pca_deletion:
+    enabled: false
+
+  pretrain_finetune:
+    enabled: false

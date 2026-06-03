@@ -126,6 +126,8 @@ supported by the runner.
 
 Useful configs:
 
+- `configs/feather.yaml`: full Feather experiment.
+- `configs/layer_exp.yaml`: full layer experiment.
 - `configs/layer_exp_fast.yaml`: smaller layer experiment for iteration.
 - `configs/pca_deletion_fast.yaml`: smaller PCA-deletion experiment.
 - `configs/pca_deletion.yaml`: full PCA-deletion runner config.
