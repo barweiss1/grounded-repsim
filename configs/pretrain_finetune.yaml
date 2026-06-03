@@ -24,7 +24,18 @@ experiments:
       num_layers: 8
       num_seeds: 10
       num_fseeds: 10
+      pre_seeds: [0, 1, 2, 3]
       metrics: ["softmax_rwka", "softmax_rwka_auc", "rbf_rwka", "rbf_rwka_auc", "PWCCA", "mean_cca_corr", "mean_sq_cca_corr", "CSA", "CKA", "Procrustes", "cka_rbf", "cka_rbf_quantile", "cka_rbf_auc", "mutual_knn", "mutual_knn_auc", "cknna"]
+      # sweep and AUC options
+      metric_param_sweep_len: 30
+      auc_integration_method: "average"   # 'trapezoidal' or 'average'
+      auc_logscale: true
+      # adaptive rbf sigma uses pairwise distance quantiles (feats_A and feats_B)
+      auc_adaptive_rbf_sigma: false
+      auc_adaptive_quantiles: [0.01, 0.8]
+      # adaptive temperature for softmax_rwka uses quantiles of abs inner-products
+      auc_adaptive_temperature: false
+      auc_adaptive_temperature_quantiles: [0.01, 0.8]
 
     compute_full_df:
       scores_path: "scores/pretrain_finetune/scores.pkl"
@@ -34,3 +45,8 @@ experiments:
       tasks: ["STRESS_ANTONYMY", "STRESS_OVERLAP", "STRESS_SPELL", "STRESS_NUMERICAL", "STRESS_LENGTH", "STRESS_NEGATION", "STRESS_NUMERICAL", "lex_nonent", "BREAK", "dev_mismatched", "dev_matched", "HANS", "snli_train", "snli_dev", "train"]
       num_layers: 8
       metrics: ["softmax_rwka", "softmax_rwka_auc", "rbf_rwka", "rbf_rwka_auc", "PWCCA", "CKA", "Procrustes", "cka_rbf_auc", "mutual_knn", "mutual_knn_auc", "cknna", "cknna_auc"]
+      # same sweep options available to script-level AUC computations
+      metric_param_sweep_len: 30
+      auc_logscale: true
+      auc_adaptive_temperature: false
+      auc_adaptive_temperature_quantiles: [0.01, 0.8]

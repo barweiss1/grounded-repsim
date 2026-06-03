@@ -19,14 +19,15 @@ def run_compute_dists(cfg, results_dir, resources_path, device=None):
     step = cfg.get('step')
     num_layers = cfg.get('num_layers')
     num_seeds = cfg.get('num_seeds')
+    seed1_seeds = cfg.get('seed1_seeds', list(range(num_seeds)))
 
     result_filename = get_run_paths(results_dir)["dists"]
     result_filename.parent.mkdir(parents=True, exist_ok=True)
     open(result_filename, 'w').close()
 
-    total = (num_seeds * (num_seeds + 1) // 2) * num_layers
+    total = sum(num_seeds - seed1 for seed1 in seed1_seeds) * num_layers
     with tqdm(total=total, desc="feather distance pairs", unit="pair") as pbar:
-        for seed1 in range(num_seeds):
+        for seed1 in seed1_seeds:
             for seed2 in range(seed1, num_seeds):
                 for layer in range(num_layers):
                     rep1_dict = {"dataset": dataset, "architecture": architecture, "seed": seed1, "step": step, "layer": layer}

@@ -22,9 +22,19 @@ experiments:
       architecture: "medium_finetuned"
       num_layers: 8
       layers: [4, 5, 6, 7]     # Fast: use last 4 layers instead of first 4
-      pre_seeds: [1, 2, 3, 4]
+      pre_seeds: [0, 1, 2]
       fine_seeds: [1, 2, 3, 4]
       metrics: ["softmax_rwka", "softmax_rwka_auc", "rbf_rwka", "rbf_rwka_auc", "PWCCA", "CKA", "Procrustes", "cka_rbf", "mutual_knn", "cknna"]
+      # sweep and AUC options
+      metric_param_sweep_len: 30
+      auc_integration_method: "average"   # 'trapezoidal' or 'average'
+      auc_logscale: true
+      # adaptive rbf sigma uses pairwise distance quantiles (feats_A and feats_B)
+      auc_adaptive_rbf_sigma: false
+      auc_adaptive_quantiles: [0.01, 0.8]
+      # adaptive temperature for softmax_rwka uses quantiles of abs inner-products
+      auc_adaptive_temperature: false
+      auc_adaptive_temperature_quantiles: [0.01, 0.8]
 
     compute_full_df:
       scores_path: "scores/pretrain_finetune/scores.pkl"
@@ -35,3 +45,8 @@ experiments:
       num_layers: 8
       layers: [4, 5, 6, 7]
       metrics: ["softmax_rwka", "softmax_rwka_auc", "rbf_rwka", "rbf_rwka_auc", "PWCCA", "CKA", "Procrustes", "cka_rbf", "mutual_knn", "cknna"]
+      # same sweep options available to script-level AUC computations
+      metric_param_sweep_len: 30
+      auc_logscale: true
+      auc_adaptive_temperature: false
+      auc_adaptive_temperature_quantiles: [0.01, 0.8]

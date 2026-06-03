@@ -33,7 +33,7 @@ experiments:
       auc_adaptive_rbf_sigma: false
       auc_adaptive_quantiles: [0.01, 0.8]
       auc_adaptive_temperature: false
-      auc_adaptive_temperature_quantiles: [0.001, 0.5]
+      auc_adaptive_temperature_quantiles: [0.01, 0.8]
 
     compute_full_df:
       scores_path: "scores/pca_deletion/scores.pkl"
@@ -48,10 +48,11 @@ experiments:
       layers: [10, 11]           # Fast: use last layers
       num_layers: 12
       metrics: ["rbf_rwka", "rbf_rwka_auc", "softmax_rwka", "softmax_rwka_auc", "PWCCA", "CKA", "Procrustes", "cka_rbf_auc", "mutual_knn_auc"]
+      # same sweep options available to script-level AUC computations
       metric_param_sweep_len: 30
       auc_logscale: true
       auc_adaptive_temperature: false
-      auc_adaptive_temperature_quantiles: [0.001, 0.5]
+      auc_adaptive_temperature_quantiles: [0.01, 0.8]
 
   pretrain_finetune:
     enabled: false
