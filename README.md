@@ -95,6 +95,35 @@ pretrain_finetune:
 Requested stages must still have config blocks, and stage execution always
 follows the canonical order: `compute_dists`, `compute_full_df`, then `script`.
 
+`compute_dists` stages support CPU-parallel, resumable distance computation.
+`num_workers` can be set in YAML or passed at runtime with `--num-workers`; if
+neither is provided, a stage runs with a single worker. Other useful keys under
+each `compute_dists` block:
+
+```yaml
+write_every: 50
+overwrite_dists: false
+embedding_cache_size: 2
+torch_num_threads_per_worker: 1
+```
+
+For SLURM CPU jobs, request matching cores and prevent each worker from spawning
+extra BLAS threads:
+
+```bash
+#SBATCH --cpus-per-task=8
+
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export NUMEXPR_NUM_THREADS=1
+
+python run_experiment.py \
+  --config configs/pretrain_finetune.yaml \
+  --device cpu \
+  --num-workers "$SLURM_CPUS_PER_TASK"
+```
+
 Runner outputs are written under:
 
 ```text

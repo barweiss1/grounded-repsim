@@ -11,6 +11,10 @@ experiments:
       step: 0
       num_layers: 12
       num_seeds: 100
+      write_every: 50
+      overwrite_dists: false
+      embedding_cache_size: 2
+      torch_num_threads_per_worker: 1
     compute_full_df:
       # paths will be resolved by the runner
       # can override if needed

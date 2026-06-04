@@ -69,6 +69,16 @@ def resolve_enabled_stages(exp_name, exp_cfg, stages):
 
     return [stage for stage in stages if stage[0] in requested_stage_names]
 
+def apply_runner_overrides(cfg, num_workers=None):
+    if num_workers is None:
+        return cfg
+
+    for exp_cfg in cfg.get('experiments', {}).values():
+        compute_dists_cfg = exp_cfg.get('compute_dists')
+        if compute_dists_cfg:
+            compute_dists_cfg['num_workers'] = num_workers
+    return cfg
+
 def run_experiment(exp_name, exp_cfg, results_base, run_id, device=None):
     exp_dir = os.path.join(results_base, exp_name, run_id)
     ensure_dir(exp_dir)
@@ -102,9 +112,11 @@ def main():
     parser = argparse.ArgumentParser(description='Run grounded-repsim experiments from YAML config')
     parser.add_argument('--config', type=str, required=True, help='Path to YAML config')
     parser.add_argument('--device', type=str, default='auto', help='Device to run on: auto|cpu|cuda[:idx]')
+    parser.add_argument('--num-workers', type=int, default=None, help='Override compute_dists.num_workers for enabled experiments')
     args = parser.parse_args()
 
     cfg = load_config(args.config)
+    cfg = apply_runner_overrides(cfg, num_workers=args.num_workers)
     # Resolve device
     device_arg = args.device
     resolved_device = None
