@@ -164,6 +164,12 @@ Useful configs:
 - `configs/pretrain_finetune.yaml`: full pretrain/finetune runner config.
 - `configs/experiment_runner.yaml`: example runner config.
 
+Sweep analysis notebooks live at
+`experiments/<experiment>/similarity_signals.ipynb`. They use
+`experiments/sweep_analysis.py` to load AUC sweep JSON files from a run's
+`sweeps/` directory and save similarity-signal plots under
+`<results_dir>/figures/sweep_signals/`.
+
 The primary research metrics in this repo are the RWKA family:
 `softmax_rwka`, `rbf_rwka`, and especially their AUC variants
 `softmax_rwka_auc` and `rbf_rwka_auc`. Fast-run configs should include these
