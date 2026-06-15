@@ -25,6 +25,10 @@ experiments:
       num_seeds: 7
       total_dim: 768
       dims_deleted: [0, 100, 200, 300, 400, 500, 600, 650, 700, 725, 750, 758, 763, 767]
+      write_every: 50
+      overwrite_dists: false
+      embedding_cache_size: 2
+      torch_num_threads_per_worker: 1
       metrics: ["softmax_rwka", "softmax_rwka_auc", "PWCCA", "mean_cca_corr", "mean_sq_cca_corr", "CSA", "CKA", "Procrustes", "cka_rbf", "cka_rbf_auc", "mutual_knn", "mutual_knn_auc", "cknna"]
       # sweep and AUC options
       metric_param_sweep_len: 30

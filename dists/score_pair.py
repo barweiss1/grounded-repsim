@@ -4,6 +4,7 @@ import os
 import csv
 import pathlib
 import logging
+from collections import OrderedDict
 
 from scoring import *
 from compute_embeddings import compute_embeddings
@@ -33,6 +34,16 @@ DEFAULT_SIM_PARAMS.update({
     'auc_adaptive_temperature_quantiles': (0.01, 0.8),
 })
 
+_EMBEDDING_CACHE = OrderedDict()
+_EMBEDDING_CACHE_SIZE = 0
+
+
+def set_embedding_cache_size(cache_size: int) -> None:
+    global _EMBEDDING_CACHE_SIZE
+    _EMBEDDING_CACHE_SIZE = max(0, int(cache_size))
+    if _EMBEDDING_CACHE_SIZE == 0:
+        _EMBEDDING_CACHE.clear()
+
 
 def _to_jsonable(obj):
     if isinstance(obj, np.ndarray):
@@ -55,6 +66,11 @@ def load_embedding(
     step: int,
     layer: int,
 ) -> np.ndarray:
+    cache_key = (dataset, architecture, seed, step, layer)
+    if _EMBEDDING_CACHE_SIZE > 0 and cache_key in _EMBEDDING_CACHE:
+        rep = _EMBEDDING_CACHE.pop(cache_key)
+        _EMBEDDING_CACHE[cache_key] = rep
+        return rep
 
     # path to look for embedding
     folder_path = get_embedding_folder(dataset, architecture, seed, step, layer)
@@ -68,22 +84,26 @@ def load_embedding(
     else:
         print("Representation already exists...loading...")
         rep = np.load(folder_path / pathlib.Path("rep.npy"))
+    if _EMBEDDING_CACHE_SIZE > 0:
+        _EMBEDDING_CACHE[cache_key] = rep
+        while len(_EMBEDDING_CACHE) > _EMBEDDING_CACHE_SIZE:
+            _EMBEDDING_CACHE.popitem(last=False)
     return rep
 
 
-def score_pair_to_csv(
+def score_pair(
     rep1_dict: dict,
     rep2_dict: dict,
-    filename: str,
     metrics: list,
-) -> None:
+    sim_params: dict = DEFAULT_SIM_PARAMS,
+) -> tuple[dict, list[dict]]:
     """
-    Compute metric distance between two representations and save it to a csv file
+    Compute metric distance between two representations and return the row plus
+    any AUC sweep payloads.
 
     Args:
         rep1_dict (dict): dictionary specifying configuration of representation 1, to load its representation from disk
         rep2_dict (dict): dictionary specifying configuration of representation 2, to load its representation from disk
-        filename (str): output filename to save results to
         metrics (list, optional): list of metrics to apply, eg CCA and/or CKA and/or GLD (by default all)
     """
 
@@ -118,19 +138,19 @@ def score_pair_to_csv(
         "layer2": rep2_dict["layer"],
     }
 
-    score_local_pair(
-        rep1=rep1, rep2=rep2, metrics=metrics, filename=filename, metadata=results
+    return score_local_pair(
+        rep1=rep1, rep2=rep2, metrics=metrics, metadata=results, sim_params=sim_params
     )
 
 
 def score_local_pair(
     rep1: np.ndarray,
     rep2: np.ndarray,
-    filename: str,
-    metrics: list,
-    metadata: dict = {},
+    filename: str = None,
+    metrics: list = None,
+    metadata: dict = None,
     sim_params: dict = DEFAULT_SIM_PARAMS,
-) -> None:
+) -> tuple[dict, list[dict]]:
     """
     Compute metric distances between two representations (in numpy array format) and
     save results to a csv file
@@ -143,6 +163,8 @@ def score_local_pair(
         metadata (dict, optional): metadata for the representations to print to the csv (by default empty)
     """
 
+    metrics = metrics or []
+
     # center each row
     rep1 = rep1 - rep1.mean(axis=1, keepdims=True)
     rep2 = rep2 - rep2.mean(axis=1, keepdims=True)
@@ -151,7 +173,8 @@ def score_local_pair(
     rep1 = rep1 / np.linalg.norm(rep1)
     rep2 = rep2 / np.linalg.norm(rep2)
 
-    results = metadata
+    results = dict(metadata or {})
+    sweep_payloads = []
 
     ## CCA like: first decompose, then compute metrics themselves
     if (
@@ -221,40 +244,16 @@ def score_local_pair(
                     auc_dist, param_vec, scores = auc_result
                     results[metric + "_auc"] = auc_dist
 
-                    # save sweep data to a json file alongside the CSV
-                    try:
-                        csv_path = pathlib.Path(filename)
-                        sweeps_dir = csv_path.parent / pathlib.Path("sweeps")
-                        sweeps_dir.mkdir(parents=True, exist_ok=True)
-                        # construct a short, unique filename using metadata
-                        meta_parts = [
-                            str(results.get('architecture1', 'a1')),
-                            f"s{results.get('seed1', 's1')}",
-                            f"l{results.get('layer1', 'l1')}",
-                            "vs",
-                            str(results.get('architecture2', 'a2')),
-                            f"s{results.get('seed2', 's2')}",
-                            f"l{results.get('layer2', 'l2')}",
-                        ]
-                        # Include dims_deleted if present to avoid overwrites for different deletion levels
-                        dims_deleted = results.get('dims_deleted', None)
-                        if dims_deleted is not None:
-                            meta_parts.append(f"d{dims_deleted}")
-                        safe_name = "__".join(meta_parts)
-                        sweep_file = sweeps_dir / pathlib.Path(f"{metric}_auc__{safe_name}.json")
-                        # include sweep param name and values for downstream post-processing
-                        sweep_param = AlignmentMetrics.SWEEP_PARAMS.get(metric, {}).get('param')
-                        sweep_payload = {
-                            'metadata': results,
+                    sweep_param = AlignmentMetrics.SWEEP_PARAMS.get(metric, {}).get('param')
+                    sweep_payloads.append(
+                        {
+                            'metadata': dict(results),
                             'metric': metric,
                             'param_name': sweep_param,
                             'param_values': list(param_vec),
                             'scores': list(scores),
                         }
-                        with open(sweep_file, 'w') as sf:
-                            json.dump(_to_jsonable(sweep_payload), sf)
-                    except Exception as e:
-                        logging.warning(f"Failed saving sweep file for {metric}_auc: {e}")
+                    )
                 else:
                     # fallback if older return format
                     results[metric + "_auc"] = auc_result
@@ -270,9 +269,66 @@ def score_local_pair(
     #     logging.info("Computing my_new_metric dist...")
     #     results["my_new_metric"] = my_metric_fn(rep1, rep2)
 
-    # Save results to file
+    if filename is not None:
+        append_score_row_to_csv(results, filename)
+        save_sweep_payloads(sweep_payloads, filename)
+
+    return results, sweep_payloads
+
+
+def _sweep_safe_name(metadata: dict) -> str:
+    meta_parts = [
+        str(metadata.get('architecture1', 'a1')),
+        f"s{metadata.get('seed1', 's1')}",
+        f"st{metadata.get('step1', 'st1')}",
+        f"l{metadata.get('layer1', 'l1')}",
+        "vs",
+        str(metadata.get('architecture2', 'a2')),
+        f"s{metadata.get('seed2', 's2')}",
+        f"st{metadata.get('step2', 'st2')}",
+        f"l{metadata.get('layer2', 'l2')}",
+    ]
+    dims_deleted = metadata.get('dims_deleted', None)
+    if dims_deleted is not None:
+        meta_parts.append(f"d{dims_deleted}")
+    return "__".join(meta_parts)
+
+
+def save_sweep_payloads(sweep_payloads: list[dict], csv_filename: str) -> None:
+    if not sweep_payloads:
+        return
+    csv_path = pathlib.Path(csv_filename)
+    sweeps_dir = csv_path.parent / pathlib.Path("sweeps")
+    sweeps_dir.mkdir(parents=True, exist_ok=True)
+    for sweep_payload in sweep_payloads:
+        try:
+            metadata = sweep_payload.get('metadata', {})
+            metric = sweep_payload['metric']
+            safe_name = _sweep_safe_name(metadata)
+            sweep_file = sweeps_dir / pathlib.Path(f"{metric}_auc__{safe_name}.json")
+            tmp_file = sweep_file.with_suffix(sweep_file.suffix + ".tmp")
+            with open(tmp_file, 'w') as sf:
+                json.dump(_to_jsonable(sweep_payload), sf)
+            os.replace(tmp_file, sweep_file)
+        except Exception as e:
+            logging.warning(f"Failed saving sweep file for {sweep_payload.get('metric', 'unknown')}_auc: {e}")
+
+
+def append_score_row_to_csv(results: dict, filename: str) -> None:
     with open(filename, mode="a") as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=results.keys())
         if csv_file.tell() == 0:
             writer.writeheader()
         writer.writerow(results)
+
+
+def score_pair_to_csv(
+    rep1_dict: dict,
+    rep2_dict: dict,
+    filename: str,
+    metrics: list,
+    sim_params: dict = DEFAULT_SIM_PARAMS,
+) -> None:
+    results, sweep_payloads = score_pair(rep1_dict, rep2_dict, metrics, sim_params=sim_params)
+    append_score_row_to_csv(results, filename)
+    save_sweep_payloads(sweep_payloads, filename)

@@ -3,14 +3,10 @@
 import pathlib
 import sys
 import itertools
-from tqdm import tqdm
 
 BASE_DIR = pathlib.Path(__file__).resolve().parents[2]
 sys.path.append(str(BASE_DIR))
-from experiments.common import get_run_paths
-
-sys.path.append(str(BASE_DIR / "dists"))
-from score_pair import score_pair_to_csv
+from experiments.common import get_run_paths, make_pair_job, run_pair_jobs
 
 def run_compute_dists(cfg, results_dir, resources_path, device=None):
     metrics = cfg.get('metrics', ["PWCCA", "mean_cca_corr", "mean_sq_cca_corr", "CSA", "CKA", "Procrustes"])
@@ -32,14 +28,19 @@ def run_compute_dists(cfg, results_dir, resources_path, device=None):
 
     result_filename = get_run_paths(results_dir)["dists"]
     result_filename.parent.mkdir(parents=True, exist_ok=True)
-    open(result_filename, 'w').close()
 
-    total = (len(all_model_seeds) * (len(all_model_seeds) + 1) // 2) * len(layer_indices)
-    with tqdm(total=total, desc="pretrain_finetune distance pairs", unit="pair") as pbar:
-        for idx, (pseed1, fseed1) in enumerate(all_model_seeds):
-            for (pseed2, fseed2) in all_model_seeds[idx:]:
-                for layer in layer_indices:
-                    rep1_dict = {"dataset": dataset, "architecture": architecture, "seed": pseed1, "step": fseed1, "layer": layer}
-                    rep2_dict = {"dataset": dataset, "architecture": architecture, "seed": pseed2, "step": fseed2, "layer": layer}
-                    score_pair_to_csv(rep1_dict, rep2_dict, result_filename, metrics)
-                    pbar.update(1)
+    jobs = []
+    for idx, (pseed1, fseed1) in enumerate(all_model_seeds):
+        for (pseed2, fseed2) in all_model_seeds[idx:]:
+            for layer in layer_indices:
+                rep1_dict = {"dataset": dataset, "architecture": architecture, "seed": pseed1, "step": fseed1, "layer": layer}
+                rep2_dict = {"dataset": dataset, "architecture": architecture, "seed": pseed2, "step": fseed2, "layer": layer}
+                jobs.append(make_pair_job(rep1_dict, rep2_dict))
+
+    run_pair_jobs(
+        jobs,
+        metrics,
+        result_filename,
+        cfg,
+        desc="pretrain_finetune distance pairs",
+    )

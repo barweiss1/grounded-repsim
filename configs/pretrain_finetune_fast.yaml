@@ -24,6 +24,10 @@ experiments:
       layers: [4, 5, 6, 7]     # Fast: use last 4 layers instead of first 4
       pre_seeds: [1, 2, 3]
       fine_seeds: [1, 2, 3, 4]
+      write_every: 25
+      overwrite_dists: false
+      embedding_cache_size: 2
+      torch_num_threads_per_worker: 1
       metrics: ["softmax_rwka", "softmax_rwka_auc", "rbf_rwka", "rbf_rwka_auc", "PWCCA", "CKA", "Procrustes", "cka_rbf", "mutual_knn", "cknna"]
       # sweep and AUC options
       metric_param_sweep_len: 30
