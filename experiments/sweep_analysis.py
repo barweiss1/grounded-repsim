@@ -553,6 +553,7 @@ def plot_task_correlation_boxplot(
     metric_order=None,
     quantiles=(0.25, 0.75),
     show_quantile_labels=True,
+    show_outliers=True,
 ):
     plot_df = corr_df.dropna(subset=["correlation"]).copy()
     if plot_df.empty:
@@ -577,6 +578,7 @@ def plot_task_correlation_boxplot(
         labels=metric_order,
         patch_artist=True,
         showmeans=False,
+        showfliers=show_outliers,
         boxprops={"facecolor": "tab:blue", "alpha": 0.35, "edgecolor": "tab:blue"},
         medianprops={"color": "black", "linewidth": 1.8},
         whiskerprops={"color": "tab:blue"},
@@ -598,6 +600,95 @@ def plot_task_correlation_boxplot(
             label = f"{row['median']:.2f} [{row['q_low']:.2f}, {row['q_high']:.2f}]"
             ax.text(label_x, y_pos, label, va="center", fontsize=8)
         ax.set_xlim(x_min, label_x + 0.2 * (x_max - x_min))
+
+    fig.tight_layout()
+
+    if save_path is not None:
+        save_path = pathlib.Path(save_path)
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(save_path, dpi=200)
+        print(f"Saved figure to {save_path}")
+
+    return fig
+
+
+def compute_task_metric_ranks(corr_df, rank_method="average"):
+    valid_df = corr_df.dropna(subset=["correlation"]).copy()
+    if valid_df.empty:
+        return pd.DataFrame(columns=[*corr_df.columns, "rank"])
+
+    valid_df["rank"] = valid_df.groupby("task")["correlation"].rank(
+        ascending=False,
+        method=rank_method,
+    )
+    return valid_df
+
+
+def plot_task_metric_rank_boxplot(
+    corr_df,
+    save_path=None,
+    title=None,
+    metric_order=None,
+    quantiles=(0.25, 0.75),
+    rank_method="average",
+    show_quantile_labels=True,
+    show_outliers=True,
+):
+    rank_df = compute_task_metric_ranks(corr_df, rank_method=rank_method)
+    if rank_df.empty:
+        print("No task metric ranks to plot")
+        return None
+
+    q_low, q_high = quantiles
+    summary = (
+        rank_df.groupby("metric")["rank"]
+        .agg(
+            median="median",
+            q_low=lambda values: values.quantile(q_low),
+            q_high=lambda values: values.quantile(q_high),
+            n_tasks="count",
+        )
+        .reset_index()
+    )
+    if metric_order is None:
+        metric_order = summary.sort_values("median", ascending=False)["metric"].tolist()
+    else:
+        metric_order = [metric for metric in metric_order if metric in set(rank_df["metric"])]
+
+    data = [
+        rank_df.loc[rank_df["metric"] == metric, "rank"].to_numpy(dtype=float)
+        for metric in metric_order
+    ]
+    fig_height = max(4.0, 0.45 * len(metric_order))
+    fig, ax = plt.subplots(figsize=(10, fig_height))
+    ax.boxplot(
+        data,
+        vert=False,
+        labels=metric_order,
+        patch_artist=True,
+        showmeans=False,
+        showfliers=show_outliers,
+        boxprops={"facecolor": "tab:green", "alpha": 0.35, "edgecolor": "tab:green"},
+        medianprops={"color": "black", "linewidth": 1.8},
+        whiskerprops={"color": "tab:green"},
+        capprops={"color": "tab:green"},
+        flierprops={"marker": "o", "markersize": 3, "alpha": 0.45},
+    )
+    ax.set_xlabel("Per-task rank by correlation (1 = highest)")
+    ax.set_ylabel("Metric")
+    ax.set_title(title or "Task-wise metric rank distribution")
+    ax.grid(True, axis="x", alpha=0.3, linestyle="--")
+    ax.invert_xaxis()
+
+    if show_quantile_labels:
+        summary_by_metric = summary.set_index("metric")
+        x_min, x_max = ax.get_xlim()
+        label_x = min(x_min, x_max) - 0.02 * abs(x_max - x_min)
+        for y_pos, metric in enumerate(metric_order, start=1):
+            row = summary_by_metric.loc[metric]
+            label = f"{row['median']:.1f} [{row['q_low']:.1f}, {row['q_high']:.1f}]"
+            ax.text(label_x, y_pos, label, va="center", fontsize=8)
+        ax.set_xlim(max(x_min, x_max), label_x - 0.2 * abs(x_max - x_min))
 
     fig.tight_layout()
 
